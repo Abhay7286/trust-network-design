@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,37 +24,38 @@ const Navigation = () => {
 
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? "bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-100" : "bg-transparent"
+      isScrolled ? "bg-gray-900/95 backdrop-blur-sm border-b border-gray-700" : "bg-transparent"
     }`}>
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
-          <div className="text-2xl font-bold text-blue-600">
-            SecureShield
+          <div className="flex items-center gap-2">
+            <Search size={24} className="text-blue-400" />
+            <span className="text-xl font-bold text-white">OSINT Pro</span>
           </div>
           
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8">
             <button
               onClick={() => scrollToSection("home")}
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium"
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
               Home
             </button>
             <button
-              onClick={() => scrollToSection("services")}
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium"
+              onClick={() => scrollToSection("providers")}
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              Services
+              Find Providers
             </button>
             <button
-              onClick={() => scrollToSection("about")}
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium"
+              onClick={() => scrollToSection("osint")}
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
-              About
+              OSINT
             </button>
             <button
               onClick={() => scrollToSection("contact")}
-              className="text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium"
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
             >
               Contact
             </button>
@@ -62,7 +63,7 @@ const Navigation = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-gray-700"
+            className="md:hidden text-gray-300"
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -71,28 +72,28 @@ const Navigation = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden mt-4 pb-4 space-y-4 bg-white rounded-lg shadow-lg border border-gray-100 p-4">
+          <div className="md:hidden mt-4 pb-4 space-y-4 bg-gray-800 rounded-lg border border-gray-700 p-4">
             <button
               onClick={() => scrollToSection("home")}
-              className="block text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium w-full text-left"
+              className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
             >
               Home
             </button>
             <button
-              onClick={() => scrollToSection("services")}
-              className="block text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium w-full text-left"
+              onClick={() => scrollToSection("providers")}
+              className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
             >
-              Services
+              Find Providers
             </button>
             <button
-              onClick={() => scrollToSection("about")}
-              className="block text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium w-full text-left"
+              onClick={() => scrollToSection("osint")}
+              className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
             >
-              About
+              OSINT
             </button>
             <button
               onClick={() => scrollToSection("contact")}
-              className="block text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium w-full text-left"
+              className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
             >
               Contact
             </button>
