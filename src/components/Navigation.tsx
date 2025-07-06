@@ -66,6 +66,12 @@ const Navigation = () => {
             >
               OSINT
             </Link>
+            <Link
+              to="/google-dork"
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              Google Dork
+            </Link>
             {isHomePage ? (
               <button
                 onClick={() => scrollToSection("contact")}
@@ -124,6 +130,13 @@ const Navigation = () => {
               onClick={() => setIsOpen(false)}
             >
               OSINT
+            </Link>
+            <Link
+              to="/google-dork"
+              className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
+              onClick={() => setIsOpen(false)}
+            >
+              Google Dork
             </Link>
             {isHomePage ? (
               <button
