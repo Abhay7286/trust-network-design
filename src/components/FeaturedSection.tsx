@@ -52,31 +52,31 @@ const FeaturedSection = () => {
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-black mb-4 font-inter">
+          <h2 className="text-4xl font-bold text-black mb-4">
             Featured Tools & Providers
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto font-inter">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Handpicked resources trusted by cybersecurity professionals worldwide
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {featuredItems.map((item) => (
-            <Card key={item.name} className="bg-white border border-gray-200 hover:shadow-soft-lg transition-all duration-300 group hover:border-gray-400">
+            <Card key={item.name} className="bg-white border border-gray-200 hover:shadow-lg transition-all duration-300 group">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold px-2 py-1 bg-black text-white rounded font-inter">
+                  <span className="text-xs font-semibold px-2 py-1 bg-black text-white rounded">
                     {item.tag}
                   </span>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide font-inter">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">
                     {item.category}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-black mb-2 font-inter">{item.name}</h3>
-                <p className="text-gray-600 mb-4 text-sm font-inter">{item.description}</p>
+                <h3 className="text-lg font-bold text-black mb-2">{item.name}</h3>
+                <p className="text-gray-600 mb-4 text-sm">{item.description}</p>
                 <Button
                   size="sm"
-                  className="w-full bg-black text-white hover:bg-gray-800 transition-colors duration-300 font-inter"
+                  className="w-full bg-black text-white hover:bg-gray-800 transition-colors duration-300"
                   onClick={() => window.open(item.url, '_blank')}
                 >
                   Visit Site
