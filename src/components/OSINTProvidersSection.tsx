@@ -164,13 +164,13 @@ const OSINTProvidersSection = () => {
   const categories = [...new Set(osintTools.map(tool => tool.category))];
 
   return (
-    <section id="osint-tools" className="py-20 bg-gray-800">
+    <section id="osint-tools" className="py-20 bg-gray-900">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-white mb-6">
+          <h2 className="text-4xl font-bold text-white mb-6 font-inter">
             Professional OSINT Tools Directory
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto font-inter">
             Comprehensive collection of open-source intelligence tools for cybersecurity research, 
             threat hunting, and investigative analysis.
           </p>
@@ -178,7 +178,7 @@ const OSINTProvidersSection = () => {
 
         {categories.map((category) => (
           <div key={category} className="mb-16">
-            <h3 className="text-2xl font-bold text-white mb-8 text-center">
+            <h3 className="text-2xl font-bold text-white mb-8 text-center font-inter">
               {category}
             </h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -187,28 +187,28 @@ const OSINTProvidersSection = () => {
                 .map((tool) => (
                   <Card 
                     key={tool.name}
-                    className="bg-gray-900/50 border border-gray-700 hover:border-green-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10 group"
+                    className="bg-white border border-gray-200 hover:border-black transition-all duration-300 hover:shadow-soft-lg group"
                   >
                     <CardContent className="p-8">
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex items-center gap-4">
-                          <div className="p-3 bg-green-500/10 rounded-xl group-hover:bg-green-500/20 transition-colors">
-                            <tool.icon className="text-green-400" size={28} />
+                          <div className="p-3 bg-gray-100 rounded-xl group-hover:bg-gray-200 transition-colors border border-gray-200">
+                            <tool.icon className="text-black" size={28} />
                           </div>
                           <div>
-                            <h4 className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">
+                            <h4 className="text-xl font-bold text-black group-hover:text-gray-800 transition-colors font-inter">
                               {tool.name}
                             </h4>
                           </div>
                         </div>
                       </div>
 
-                      <p className="text-gray-400 mb-6 leading-relaxed">
+                      <p className="text-gray-600 mb-6 leading-relaxed font-inter">
                         {tool.description}
                       </p>
 
                       <Button
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all duration-300"
+                        className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 rounded-lg transition-all duration-300 font-inter"
                         onClick={() => window.open(tool.url, '_blank')}
                       >
                         Visit Tool

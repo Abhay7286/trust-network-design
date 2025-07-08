@@ -29,25 +29,25 @@ const OverviewSection = () => {
     <section className="py-20 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-black mb-4">
+          <h2 className="text-4xl font-bold text-black mb-4 font-inter">
             What You'll Find
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto font-inter">
             Everything you need to navigate the cybersecurity landscape
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {overviewCards.map((card) => (
-            <Card key={card.title} className="bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 group">
+            <Card key={card.title} className="bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 group shadow-soft hover:shadow-soft-lg">
               <CardContent className="p-8 text-center">
                 <div className="text-4xl mb-4">{card.icon}</div>
-                <h3 className="text-xl font-bold text-black mb-4">{card.title}</h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">{card.description}</p>
+                <h3 className="text-xl font-bold text-black mb-4 font-inter">{card.title}</h3>
+                <p className="text-gray-600 mb-6 leading-relaxed font-inter">{card.description}</p>
                 <Link to={card.link}>
                   <Button 
                     variant="outline" 
-                    className="border-black text-black hover:bg-black hover:text-white transition-all duration-300"
+                    className="border-black text-black hover:bg-black hover:text-white transition-all duration-300 font-inter"
                   >
                     Explore
                   </Button>
