@@ -1,5 +1,5 @@
 
-import { Copy, AlertTriangle } from "lucide-react";
+import { Copy, Lock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const GoogleDorkExamplesSection = () => {
@@ -41,12 +41,6 @@ const GoogleDorkExamplesSection = () => {
       purpose: "Access cached content that may be removed"
     },
     {
-      syntax: "\"password\" filetype:txt",
-      description: "Combine operators for specific searches",
-      example: "\"password\" filetype:txt site:pastebin.com",
-      purpose: "Find text files containing passwords"
-    },
-    {
       syntax: "intext:\"confidential\"",
       description: "Search within page content",
       example: "intext:\"confidential\" filetype:doc",
@@ -65,16 +59,94 @@ const GoogleDorkExamplesSection = () => {
       purpose: "Find WordPress upload directories"
     },
     {
-      syntax: "\"Index of /\" password",
-      description: "Find exposed password files",
-      example: "\"Index of /\" \"password.txt\"",
-      purpose: "Locate password files in open directories"
-    },
-    {
       syntax: "inurl:\"php?id=\"",
       description: "Find potential SQL injection points",
       example: "inurl:\"php?id=\" \"error\"",
       purpose: "Discover vulnerable web applications"
+    },
+    {
+      syntax: "ext:log",
+      description: "Find exposed log files",
+      example: "ext:log \"error\" site:example.com",
+      purpose: "Locate system and application log files"
+    },
+    {
+      syntax: "inurl:ftp -inurl:http -inurl:https",
+      description: "Find FTP directories",
+      example: "inurl:ftp -inurl:http site:example.com",
+      purpose: "Discover FTP file listings"
+    },
+    {
+      syntax: "\"Index of /backup\"",
+      description: "Find backup directories",
+      example: "\"Index of /backup\" password",
+      purpose: "Locate backup file directories"
+    },
+    {
+      syntax: "filetype:env \"DB_PASSWORD\"",
+      description: "Find environment files with database passwords",
+      example: "filetype:env \"DB_PASSWORD\" site:github.com",
+      purpose: "Discover exposed environment configuration files"
+    },
+    {
+      syntax: "intitle:\"Welcome to nginx!\"",
+      description: "Find default nginx installations",
+      example: "intitle:\"Welcome to nginx!\" server",
+      purpose: "Identify unconfigured web servers"
+    },
+    {
+      syntax: "inurl:\"/phpmyadmin/\"",
+      description: "Find phpMyAdmin installations",
+      example: "inurl:\"/phpmyadmin/\" \"Welcome to phpMyAdmin\"",
+      purpose: "Locate database management interfaces"
+    },
+    {
+      syntax: "ext:xls \"password\"",
+      description: "Find Excel files containing passwords",
+      example: "ext:xls \"password\" \"username\"",
+      purpose: "Discover spreadsheets with credential information"
+    },
+    {
+      syntax: "intitle:\"Apache Status\"",
+      description: "Find Apache server status pages",
+      example: "intitle:\"Apache Status\" \"server uptime\"",
+      purpose: "Access Apache server information pages"
+    },
+    {
+      syntax: "\"powered by\" inurl:admin",
+      description: "Find admin panels by CMS",
+      example: "\"powered by WordPress\" inurl:admin",
+      purpose: "Identify content management system admin areas"
+    },
+    {
+      syntax: "intext:\"mysql_connect\"",
+      description: "Find PHP files with database connections",
+      example: "intext:\"mysql_connect\" filetype:php",
+      purpose: "Discover PHP files containing database connection code"
+    },
+    {
+      syntax: "ext:cfg \"password\"",
+      description: "Find configuration files with passwords",
+      example: "ext:cfg \"password\" \"username\"",
+      purpose: "Locate configuration files containing credentials"
+    },
+    {
+      syntax: "inurl:\"server-status\"",
+      description: "Find Apache server status information",
+      example: "inurl:\"server-status\" \"Apache Server Status\"",
+      purpose: "Access detailed Apache server statistics"
+    },
+    {
+      syntax: "filetype:properties \"password\"",
+      description: "Find Java properties files with passwords",
+      example: "filetype:properties \"jdbc.password\"",
+      purpose: "Discover Java application configuration files"
+    },
+    {
+      syntax: "\"Index of\" intext:\"Parent Directory\"",
+      description: "Find open directory listings",
+      example: "\"Index of\" intext:\"Parent Directory\" documents",
+      purpose: "Locate accessible file directory structures"
     }
   ];
 
@@ -87,37 +159,21 @@ const GoogleDorkExamplesSection = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-white mb-6">
-            Common Google Dork Examples
+            Advanced Google Dork Examples
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Master these advanced search operators to enhance your OSINT capabilities 
-            and cybersecurity research skills.
+            Master these powerful search operators to enhance your OSINT capabilities 
+            and cybersecurity research skills for ethical purposes only.
           </p>
-        </div>
-
-        {/* Disclaimer */}
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 mb-12 max-w-4xl mx-auto">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="text-red-400 mt-1" size={20} />
-            <div>
-              <h3 className="text-red-400 font-semibold mb-2">⚠️ Legal and Ethical Use Only</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                These Google Dork techniques should only be used for legitimate purposes such as 
-                security research, bug hunting on systems you own or have permission to test, 
-                and educational purposes. Unauthorized access to systems or data is illegal and unethical. 
-                Always respect privacy and follow applicable laws and regulations.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Google Dorks Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {googleDorks.map((dork, index) => (
-            <Card key={index} className="bg-gray-900 border-gray-700 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg group">
+            <Card key={index} className="bg-gray-900 border-gray-700 hover:border-purple-500/50 transition-all duration-300 hover:shadow-lg group">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg text-white group-hover:text-blue-400 transition-colors">
+                  <CardTitle className="text-lg text-white group-hover:text-purple-400 transition-colors font-mono">
                     {dork.syntax}
                   </CardTitle>
                   <button
@@ -125,7 +181,7 @@ const GoogleDorkExamplesSection = () => {
                     className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                     title="Copy to clipboard"
                   >
-                    <Copy size={16} className="text-gray-400 hover:text-blue-400" />
+                    <Copy size={16} className="text-gray-400 hover:text-purple-400" />
                   </button>
                 </div>
                 <CardDescription className="text-gray-400">
@@ -136,7 +192,7 @@ const GoogleDorkExamplesSection = () => {
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Example:</p>
-                    <code className="text-sm bg-gray-800 text-green-400 px-3 py-2 rounded-lg block font-mono">
+                    <code className="text-sm bg-gray-800 text-green-400 px-3 py-2 rounded-lg block font-mono break-all">
                       {dork.example}
                     </code>
                   </div>
@@ -150,34 +206,25 @@ const GoogleDorkExamplesSection = () => {
           ))}
         </div>
 
-        {/* Additional Tips */}
         <div className="mt-16 max-w-4xl mx-auto">
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
-              <CardTitle className="text-white text-xl">💡 Pro Tips for Effective Google Dorking</CardTitle>
+              <CardTitle className="text-white text-xl flex items-center gap-2">
+                <Lock className="text-red-400" size={24} />
+                ⚠️ Legal and Ethical Use Only
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-3 text-gray-300">
-                <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
-                  <span>Combine multiple operators for more precise results (e.g., site:example.com filetype:pdf)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-400">•</span>
-                  <span>Use quotes for exact phrase matching ("admin panel")</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-purple-400">•</span>
-                  <span>Try variations of keywords and synonyms for comprehensive searches</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-yellow-400">•</span>
-                  <span>Use the minus operator (-) to exclude unwanted results</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Always verify findings through legitimate channels before reporting</span>
-                </li>
+              <p className="text-gray-300 mb-4">
+                These Google Dork techniques should only be used for legitimate purposes such as 
+                security research, bug hunting on systems you own or have permission to test, 
+                and educational purposes. Unauthorized access to systems or data is illegal and unethical.
+              </p>
+              <ul className="space-y-2 text-gray-300 text-sm">
+                <li>• Always respect privacy and follow applicable laws and regulations</li>
+                <li>• Only test on systems you own or have explicit permission to test</li>
+                <li>• Use findings responsibly and report vulnerabilities through proper channels</li>
+                <li>• Consider the impact of your research on individuals and organizations</li>
               </ul>
             </CardContent>
           </Card>

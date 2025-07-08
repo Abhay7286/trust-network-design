@@ -16,16 +16,6 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-    setIsOpen(false);
-  };
-
-  const isHomePage = location.pathname === "/";
-
   return (
     <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
       isScrolled ? "bg-gray-900/95 backdrop-blur-sm border-b border-gray-700" : "bg-transparent"
@@ -63,21 +53,6 @@ const Navigation = () => {
             >
               Google Dork
             </Link>
-            {isHomePage ? (
-              <button
-                onClick={() => scrollToSection("about")}
-                className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
-              >
-                About
-              </button>
-            ) : (
-              <Link
-                to="/"
-                className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
-              >
-                About
-              </Link>
-            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -120,22 +95,6 @@ const Navigation = () => {
             >
               Google Dork
             </Link>
-            {isHomePage ? (
-              <button
-                onClick={() => scrollToSection("about")}
-                className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
-              >
-                About
-              </button>
-            ) : (
-              <Link
-                to="/"
-                className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                About
-              </Link>
-            )}
           </div>
         )}
       </div>
