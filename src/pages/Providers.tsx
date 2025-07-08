@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 
 const Providers = () => {
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-white">
       <Navigation />
       <ProvidersHeroSection />
       <CybersecurityProvidersSection />
