@@ -1,12 +1,12 @@
 
-import { Shield, Mail, Phone, Linkedin, Twitter, Github } from "lucide-react";
+import { Shield, Linkedin, Twitter, Github } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer id="contact" className="bg-gray-900 border-t border-gray-800 py-16">
+    <footer className="bg-gray-900 border-t border-gray-800 py-16">
       <div className="container mx-auto px-6">
-        <div className="grid md:grid-cols-4 gap-12">
+        <div className="grid md:grid-cols-3 gap-12">
           {/* Company Info */}
           <div className="col-span-2">
             <div className="flex items-center gap-3 mb-6">
@@ -14,19 +14,13 @@ const Footer = () => {
               <span className="text-2xl font-bold text-white">CyberDirectory</span>
             </div>
             <p className="text-gray-400 mb-8 max-w-md leading-relaxed">
-              Your trusted directory for cybersecurity tools, OSINT services, and security providers. 
-              Connecting professionals with the best security solutions available.
+              Your trusted informational directory for discovering verified cybersecurity service providers. 
+              We connect businesses with reputable security professionals and companies across various specializations.
             </p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-gray-400">
-                <Mail size={18} />
-                <span>contact@cyberdirectory.com</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-400">
-                <Phone size={18} />
-                <span>+1 (555) 123-CYBER</span>
-              </div>
-            </div>
+            <p className="text-sm text-gray-500">
+              CyberDirectory is an informational platform that showcases third-party cybersecurity service providers. 
+              We do not provide services directly but serve as a trusted guide to qualified professionals.
+            </p>
           </div>
           
           {/* Quick Links */}
@@ -34,21 +28,10 @@ const Footer = () => {
             <h4 className="text-lg font-semibold text-white mb-6">Quick Links</h4>
             <ul className="space-y-3">
               <li><Link to="/" className="text-gray-400 hover:text-blue-400 transition-colors">Home</Link></li>
-              <li><Link to="/" className="text-gray-400 hover:text-blue-400 transition-colors">Find Providers</Link></li>
+              <li><Link to="/providers" className="text-gray-400 hover:text-blue-400 transition-colors">Find Providers</Link></li>
               <li><Link to="/osint" className="text-gray-400 hover:text-blue-400 transition-colors">OSINT Tools</Link></li>
               <li><Link to="/google-dork" className="text-gray-400 hover:text-blue-400 transition-colors">Google Dork</Link></li>
-              <li><a href="#contact" className="text-gray-400 hover:text-blue-400 transition-colors">Contact Us</a></li>
-            </ul>
-          </div>
-          
-          {/* Resources */}
-          <div>
-            <h4 className="text-lg font-semibold text-white mb-6">Resources</h4>
-            <ul className="space-y-3">
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Security Guide</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Tool Reviews</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Best Practices</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-green-400 transition-colors">Privacy Policy</a></li>
+              <li><Link to="/" className="text-gray-400 hover:text-blue-400 transition-colors">About</Link></li>
             </ul>
           </div>
         </div>

@@ -45,21 +45,12 @@ const Navigation = () => {
             >
               Home
             </Link>
-            {isHomePage ? (
-              <button
-                onClick={() => scrollToSection("services")}
-                className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
-              >
-                Find Providers
-              </button>
-            ) : (
-              <Link
-                to="/"
-                className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
-              >
-                Find Providers
-              </Link>
-            )}
+            <Link
+              to="/providers"
+              className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
+            >
+              Find Providers
+            </Link>
             <Link
               to="/osint"
               className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
@@ -74,17 +65,17 @@ const Navigation = () => {
             </Link>
             {isHomePage ? (
               <button
-                onClick={() => scrollToSection("contact")}
+                onClick={() => scrollToSection("about")}
                 className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Contact
+                About
               </button>
             ) : (
               <Link
                 to="/"
                 className="text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
               >
-                Contact
+                About
               </Link>
             )}
           </div>
@@ -108,22 +99,13 @@ const Navigation = () => {
             >
               Home
             </Link>
-            {isHomePage ? (
-              <button
-                onClick={() => scrollToSection("services")}
-                className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
-              >
-                Find Providers
-              </button>
-            ) : (
-              <Link
-                to="/"
-                className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                Find Providers
-              </Link>
-            )}
+            <Link
+              to="/providers"
+              className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
+              onClick={() => setIsOpen(false)}
+            >
+              Find Providers
+            </Link>
             <Link
               to="/osint"
               className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
@@ -140,10 +122,10 @@ const Navigation = () => {
             </Link>
             {isHomePage ? (
               <button
-                onClick={() => scrollToSection("contact")}
+                onClick={() => scrollToSection("about")}
                 className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium w-full text-left"
               >
-                Contact
+                About
               </button>
             ) : (
               <Link
@@ -151,7 +133,7 @@ const Navigation = () => {
                 className="block text-gray-300 hover:text-blue-400 transition-colors duration-300 font-medium"
                 onClick={() => setIsOpen(false)}
               >
-                Contact
+                About
               </Link>
             )}
           </div>

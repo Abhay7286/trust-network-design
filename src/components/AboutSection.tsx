@@ -1,5 +1,5 @@
 
-import { Shield, Users, Lock } from "lucide-react";
+import { Shield, Users, Globe } from "lucide-react";
 
 const AboutSection = () => {
   return (
@@ -8,17 +8,17 @@ const AboutSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              About <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400">SecureShield</span>
+              About <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400">CyberDirectory</span>
             </h2>
             <p className="text-xl text-gray-300 mb-6 leading-relaxed">
-              With over a decade of experience in cybersecurity, SecureShield is your trusted partner 
-              in digital protection. We specialize in comprehensive security solutions that adapt 
-              to the evolving threat landscape.
+              CyberDirectory is your trusted informational hub for discovering verified cybersecurity 
+              service providers. We don't provide services directly – instead, we curate and showcase 
+              reputable third-party companies that specialize in various cybersecurity disciplines.
             </p>
             <p className="text-lg text-gray-400 mb-8 leading-relaxed">
-              Our team of certified security experts works around the clock to ensure your business 
-              stays protected from cyber threats, data breaches, and compliance risks. We believe 
-              in proactive security that prevents problems before they occur.
+              Our mission is to bridge the gap between businesses seeking security solutions and 
+              qualified professionals who can deliver them. Every provider in our directory has been 
+              carefully vetted to ensure they meet industry standards and maintain excellent reputations.
             </p>
             
             <div className="space-y-4">
@@ -26,19 +26,19 @@ const AboutSection = () => {
                 <div className="p-2 bg-blue-500/20 rounded-lg">
                   <Shield size={24} className="text-blue-400" />
                 </div>
-                <span className="text-lg">10+ Years of Security Excellence</span>
+                <span className="text-lg">Carefully Vetted Service Providers</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-green-500/20 rounded-lg">
                   <Users size={24} className="text-green-400" />
                 </div>
-                <span className="text-lg">500+ Businesses Protected</span>
+                <span className="text-lg">Multiple Security Specializations</span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Lock size={24} className="text-blue-400" />
+                  <Globe size={24} className="text-blue-400" />
                 </div>
-                <span className="text-lg">99.9% Threat Prevention Rate</span>
+                <span className="text-lg">Global Network of Professionals</span>
               </div>
             </div>
           </div>
@@ -47,16 +47,16 @@ const AboutSection = () => {
             <div className="bg-gradient-to-br from-blue-600/20 to-green-600/20 rounded-2xl p-8 border border-blue-400/30 backdrop-blur-sm">
               <img 
                 src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop&crop=center"
-                alt="Cybersecurity Technology"
+                alt="Cybersecurity Network"
                 className="w-full h-64 object-cover rounded-lg mb-6"
               />
               <div className="text-center">
                 <h3 className="text-2xl font-bold mb-4 text-white">
-                  Cutting-Edge Technology
+                  Connecting You with Excellence
                 </h3>
                 <p className="text-gray-300">
-                  We leverage the latest cybersecurity technologies and methodologies 
-                  to provide comprehensive protection for your digital infrastructure.
+                  Our platform serves as a bridge between your security needs and the industry's 
+                  most qualified professionals, ensuring you find the right expertise for your specific requirements.
                 </p>
               </div>
             </div>
