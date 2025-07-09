@@ -1,7 +1,8 @@
-
 import { Copy, Search, Shield, Database, Globe, Eye, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 const googleDorks = [
   // Basic Search Operators
@@ -196,15 +197,47 @@ const googleDorks = [
 
 const GoogleDorkExamplesSection = () => {
   const categories = [...new Set(googleDorks.map(dork => dork.category))];
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        duration: 0.6,
+      },
+    },
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
   };
 
   return (
     <section id="google-dorks" className="py-20 bg-white">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
           <h2 className="text-4xl lg:text-5xl font-bold text-black mb-6">
             Master Google Dork Techniques
           </h2>
@@ -212,74 +245,134 @@ const GoogleDorkExamplesSection = () => {
             Advanced search operators for ethical cybersecurity research and penetration testing. 
             Use responsibly and only on systems you own or have permission to test.
           </p>
-        </div>
+        </motion.div>
 
-        {categories.map((category) => (
-          <div key={category} className="mb-20">
-            <h3 className="text-3xl font-bold text-black mb-12 text-center">
+        {categories.map((category, categoryIndex) => (
+          <motion.div 
+            key={category} 
+            className="mb-20"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: categoryIndex * 0.1 }}
+            viewport={{ once: true }}
+          >
+            <motion.h3 
+              className="text-3xl font-bold text-black mb-12 text-center"
+              whileInView={{ scale: [0.9, 1] }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
               {category}
-            </h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </motion.h3>
+            <motion.div 
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
               {googleDorks
                 .filter(dork => dork.category === category)
                 .map((dork, index) => (
-                  <Card 
-                    key={index} 
-                    className="bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 hover:shadow-lg group"
+                  <motion.div
+                    key={index}
+                    variants={cardVariants}
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <CardContent className="p-8">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 bg-gray-100 rounded-xl group-hover:bg-gray-200 transition-colors">
-                          <dork.icon className="text-black" size={24} />
+                    <Card 
+                      className="bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 hover:shadow-lg group cursor-pointer h-full"
+                    >
+                      <CardContent className="p-8">
+                        <div className="flex items-center gap-3 mb-6">
+                          <motion.div 
+                            className="p-3 bg-gray-100 rounded-xl group-hover:bg-gray-200 transition-colors"
+                            whileHover={{ rotate: 10, scale: 1.1 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <dork.icon className="text-black" size={24} />
+                          </motion.div>
+                          <span className="text-sm text-gray-600 font-medium">{dork.category}</span>
                         </div>
-                        <span className="text-sm text-gray-600 font-medium">{dork.category}</span>
-                      </div>
 
-                      <div className="mb-4">
-                        <code className="text-lg font-mono text-black bg-gray-100 px-3 py-2 rounded-lg block overflow-x-auto">
-                          {dork.syntax}
-                        </code>
-                      </div>
+                        <div className="mb-4">
+                          <motion.code 
+                            className="text-lg font-mono text-black bg-gray-100 px-3 py-2 rounded-lg block overflow-x-auto group-hover:bg-gray-200 transition-colors cursor-pointer"
+                            whileHover={{ scale: 1.02 }}
+                            onClick={() => copyToClipboard(dork.syntax, `${category}-${index}-syntax`)}
+                          >
+                            {dork.syntax}
+                          </motion.code>
+                        </div>
 
-                      <p className="text-gray-600 mb-4 leading-relaxed">
-                        {dork.description}
-                      </p>
+                        <p className="text-gray-600 mb-4 leading-relaxed group-hover:text-gray-700 transition-colors">
+                          {dork.description}
+                        </p>
 
-                      <div className="mb-6">
-                        <p className="text-sm text-gray-500 mb-2">Example:</p>
-                        <code className="text-sm text-gray-700 bg-gray-50 px-2 py-1 rounded block overflow-x-auto">
-                          {dork.example}
-                        </code>
-                      </div>
+                        <div className="mb-6">
+                          <p className="text-sm text-gray-500 mb-2">Example:</p>
+                          <motion.code 
+                            className="text-sm text-gray-700 bg-gray-50 px-2 py-1 rounded block overflow-x-auto hover:bg-gray-100 transition-colors cursor-pointer"
+                            whileHover={{ scale: 1.01 }}
+                            onClick={() => copyToClipboard(dork.example, `${category}-${index}-example`)}
+                          >
+                            {dork.example}
+                          </motion.code>
+                        </div>
 
-                      <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          className="flex-1 border-gray-200 text-gray-700 hover:bg-gray-100"
-                          onClick={() => copyToClipboard(dork.syntax)}
-                        >
-                          <Copy size={16} className="mr-2" />
-                          Copy
-                        </Button>
-                        <Button
-                          className="flex-1 bg-black hover:bg-gray-800 text-white"
-                          onClick={() => window.open(`https://google.com/search?q=${encodeURIComponent(dork.syntax)}`, '_blank')}
-                        >
-                          <Search size={16} className="mr-2" />
-                          Search
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="flex gap-3">
+                          <motion.div 
+                            className="flex-1"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Button
+                              variant="outline"
+                              className="w-full border-gray-200 text-gray-700 hover:bg-gray-100 relative"
+                              onClick={() => copyToClipboard(dork.syntax, `${category}-${index}`)}
+                            >
+                              <Copy size={16} className="mr-2" />
+                              {copiedId === `${category}-${index}` ? 'Copied!' : 'Copy'}
+                            </Button>
+                          </motion.div>
+                          <motion.div 
+                            className="flex-1"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Button
+                              className="w-full bg-black hover:bg-gray-800 text-white transition-all duration-300"
+                              onClick={() => window.open(`https://google.com/search?q=${encodeURIComponent(dork.syntax)}`, '_blank')}
+                            >
+                              <Search size={16} className="mr-2" />
+                              Search
+                            </Button>
+                          </motion.div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         ))}
 
         {/* Disclaimer */}
-        <div className="mt-16 bg-gray-100 p-8 rounded-lg border-2 border-gray-200">
+        <motion.div 
+          className="mt-16 bg-gray-100 p-8 rounded-lg border-2 border-gray-200 hover:border-gray-300 transition-all duration-300"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
           <div className="text-center">
-            <Shield className="mx-auto mb-4 text-black" size={32} />
+            <motion.div
+              whileHover={{ rotate: 10, scale: 1.1 }}
+              transition={{ duration: 0.2 }}
+              className="inline-block"
+            >
+              <Shield className="mx-auto mb-4 text-black" size={32} />
+            </motion.div>
             <h3 className="text-xl font-bold text-black mb-4">Ethical Use Disclaimer</h3>
             <p className="text-gray-600 leading-relaxed max-w-2xl mx-auto">
               These Google Dorks are provided for educational and authorized security testing purposes only. 
@@ -287,7 +380,7 @@ const GoogleDorkExamplesSection = () => {
               Unauthorized access to systems is illegal and unethical.
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
