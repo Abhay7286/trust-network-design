@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Search, Copy, Check, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -184,7 +183,6 @@ const GoogleDorkExamplesSection = () => {
       y: 0,
       transition: {
         duration: 0.5,
-        ease: "easeOut",
       },
     },
   };
@@ -196,7 +194,6 @@ const GoogleDorkExamplesSection = () => {
       scale: 1,
       transition: {
         duration: 0.4,
-        ease: "easeOut",
       },
     },
   };
