@@ -31,7 +31,7 @@ const ProvidersHeroSection = () => {
             </Button>
             <Button 
               variant="outline" 
-              className="border-2 border-white text-white hover:bg-white hover:text-black px-8 py-6 text-lg font-semibold rounded-lg transition-all duration-300 min-w-[200px]"
+              className="border-2 border-black bg-black text-white hover:bg-gray-800 hover:border-gray-800 px-8 py-6 text-lg font-semibold rounded-lg transition-all duration-300 min-w-[200px]"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               📊 View Categories

@@ -29,7 +29,6 @@ const OSINTHeroSection = () => {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.4, 0, 0.2, 1],
       },
     },
   };
@@ -41,7 +40,6 @@ const OSINTHeroSection = () => {
       y: 0,
       transition: {
         duration: 0.5,
-        ease: [0.4, 0, 0.2, 1],
       },
     },
   };
@@ -93,7 +91,7 @@ const OSINTHeroSection = () => {
             >
               <Button 
                 variant="outline" 
-                className="border-2 border-white text-white hover:bg-white hover:text-black px-8 py-6 text-lg font-semibold rounded-lg transition-all duration-300 min-w-[200px] hover:shadow-lg hover:shadow-white/20"
+                className="border-2 border-black bg-black text-white hover:bg-gray-800 hover:border-gray-800 px-8 py-6 text-lg font-semibold rounded-lg transition-all duration-300 min-w-[200px] hover:shadow-lg hover:shadow-black/20"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 📋 Browse Categories
