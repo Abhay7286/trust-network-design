@@ -7,9 +7,10 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
-import Providers from "./pages/Providers";
-import OSINT from "./pages/OSINT";
-import GoogleDork from "./pages/GoogleDork";
+import Tools from "./pages/Tools";
+import ToolDetail from "./pages/ToolDetail";
+import Submit from "./pages/Submit";
+import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +31,7 @@ const ScrollProgressBar = () => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 h-1 bg-black/10 z-50"
+      className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-50"
       initial={{ scaleX: 0 }}
       animate={{ scaleX: scrollProgress / 100 }}
       style={{ transformOrigin: "left" }}
@@ -49,7 +50,7 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
+        transition={{ duration: 0.3 }}
       >
         {children}
       </motion.div>
@@ -70,19 +71,24 @@ const App = () => (
               <Index />
             </PageTransition>
           } />
-          <Route path="/providers" element={
+          <Route path="/tools" element={
             <PageTransition>
-              <Providers />
+              <Tools />
             </PageTransition>
           } />
-          <Route path="/osint" element={
+          <Route path="/tools/:id" element={
             <PageTransition>
-              <OSINT />
+              <ToolDetail />
             </PageTransition>
           } />
-          <Route path="/google-dork" element={
+          <Route path="/submit" element={
             <PageTransition>
-              <GoogleDork />
+              <Submit />
+            </PageTransition>
+          } />
+          <Route path="/report" element={
+            <PageTransition>
+              <Report />
             </PageTransition>
           } />
           <Route path="*" element={
