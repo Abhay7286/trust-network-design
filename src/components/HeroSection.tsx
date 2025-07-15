@@ -34,7 +34,7 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
+    <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 pt-20">
       <div className="container mx-auto px-6 text-center">
         <motion.div 
           className="max-w-6xl mx-auto"
@@ -43,13 +43,13 @@ const HeroSection = () => {
           animate="visible"
         >
           <motion.div variants={itemVariants} className="mb-8">
-            <h1 className="text-5xl lg:text-7xl font-bold mb-6 leading-tight text-foreground">
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-tight text-foreground">
               Your Trusted
               <span className="text-primary"> Cybersecurity</span>
               <br />Tools Directory
             </h1>
             
-            <p className="text-xl lg:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-4xl mx-auto">
+            <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-4xl mx-auto">
               Discover, evaluate, and trust the best cybersecurity tools. 
               Curated by experts, rated by the community, organized for professionals.
             </p>
