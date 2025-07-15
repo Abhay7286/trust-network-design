@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,9 @@ import Tools from "./pages/Tools";
 import ToolDetail from "./pages/ToolDetail";
 import Submit from "./pages/Submit";
 import Report from "./pages/Report";
+import Providers from "./pages/Providers";
+import OSINT from "./pages/OSINT";
+import GoogleDork from "./pages/GoogleDork";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +91,21 @@ const App = () => (
           <Route path="/report" element={
             <PageTransition>
               <Report />
+            </PageTransition>
+          } />
+          <Route path="/providers" element={
+            <PageTransition>
+              <Providers />
+            </PageTransition>
+          } />
+          <Route path="/osint" element={
+            <PageTransition>
+              <OSINT />
+            </PageTransition>
+          } />
+          <Route path="/google-dork" element={
+            <PageTransition>
+              <GoogleDork />
             </PageTransition>
           } />
           <Route path="*" element={
