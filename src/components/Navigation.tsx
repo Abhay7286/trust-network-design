@@ -33,7 +33,7 @@ const Navigation = () => {
   return (
     <motion.nav 
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm" : "bg-white"
+        isScrolled ? "bg-background/95 backdrop-blur-sm border-b border-border shadow-sm" : "bg-background"
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -43,14 +43,14 @@ const Navigation = () => {
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center gap-2 group">
             <motion.div 
-              className="w-8 h-8 bg-black rounded-full flex items-center justify-center group-hover:bg-gray-800 transition-colors duration-300"
+              className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center group-hover:bg-foreground/80 transition-colors duration-300"
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-white font-bold text-sm">CD</span>
+              <span className="text-background font-bold text-sm">CD</span>
             </motion.div>
             <motion.span 
-              className="text-xl font-bold text-black group-hover:text-gray-700 transition-colors duration-300"
+              className="text-xl font-bold text-foreground group-hover:text-foreground/70 transition-colors duration-300"
               whileHover={{ x: 2 }}
             >
               CyberDirectory
@@ -68,11 +68,11 @@ const Navigation = () => {
               <motion.div key={item.to} className="relative">
                 <Link
                   to={item.to}
-                  className="text-black hover:text-gray-600 transition-colors duration-300 font-semibold relative group"
+                  className="text-foreground hover:text-foreground/70 transition-colors duration-300 font-semibold relative group"
                 >
                   {item.label}
                   <motion.div
-                    className="absolute -bottom-1 left-0 w-full h-0.5 bg-black origin-left"
+                    className="absolute -bottom-1 left-0 w-full h-0.5 bg-foreground origin-left"
                     initial={{ scaleX: 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
@@ -84,7 +84,7 @@ const Navigation = () => {
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-black"
+            className="md:hidden text-foreground"
             onClick={() => setIsOpen(!isOpen)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -107,7 +107,7 @@ const Navigation = () => {
         <AnimatePresence>
           {isOpen && (
             <motion.div 
-              className="md:hidden mt-4 pb-4 space-y-4 bg-white rounded-lg border border-gray-200 p-4 shadow-lg"
+              className="md:hidden mt-4 pb-4 space-y-4 bg-background rounded-lg border border-border p-4 shadow-lg"
               variants={menuVariants}
               initial="hidden"
               animate="visible"
@@ -127,7 +127,7 @@ const Navigation = () => {
                 >
                   <Link
                     to={item.to}
-                    className="block text-black hover:text-gray-600 transition-colors duration-300 font-semibold hover:bg-gray-50 p-2 rounded"
+                    className="block text-foreground hover:text-foreground/70 transition-colors duration-300 font-semibold hover:bg-muted p-2 rounded"
                     onClick={() => setIsOpen(false)}
                   >
                     {item.label}
