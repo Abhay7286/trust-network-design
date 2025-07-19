@@ -1,5 +1,5 @@
 
-import { ExternalLink, Shield, Search, Globe, Database, Eye, Zap, Instagram, MessageCircle, Twitter } from "lucide-react";
+import { ExternalLink, Shield, Search, Globe, Database, Eye, Zap, Instagram, MessageSquare, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -13,7 +13,7 @@ const providers = [
     features: ["Data Mining", "Link Analysis", "Visualization"],
     social: {
       instagram: "https://instagram.com/maltego",
-      whatsapp: "https://wa.me/message/MALTEGO",
+      discord: "https://discord.gg/maltego",
       twitter: "https://twitter.com/maltego"
     }
   },
@@ -26,7 +26,7 @@ const providers = [
     features: ["Device Discovery", "Vulnerability Scanning", "API Access"],
     social: {
       instagram: "https://instagram.com/shodan_io",
-      whatsapp: "https://wa.me/message/SHODAN",
+      discord: "https://discord.gg/shodan",
       twitter: "https://twitter.com/shodanhq"
     }
   },
@@ -39,7 +39,7 @@ const providers = [
     features: ["Breach Monitoring", "Password Analysis", "API Integration"],
     social: {
       instagram: "https://instagram.com/haveibeenpwned",
-      whatsapp: "https://wa.me/message/HIBP",
+      discord: "https://discord.gg/hibp",
       twitter: "https://twitter.com/haveibeenpwned"
     }
   },
@@ -52,7 +52,7 @@ const providers = [
     features: ["Identity Verification", "People Search", "Professional Data"],
     social: {
       instagram: "https://instagram.com/pipl",
-      whatsapp: "https://wa.me/message/PIPL",
+      discord: "https://discord.gg/pipl",
       twitter: "https://twitter.com/pipl"
     }
   },
@@ -65,7 +65,7 @@ const providers = [
     features: ["Threat Research", "Infrastructure Mapping", "IOC Analysis"],
     social: {
       instagram: "https://instagram.com/threatcrowd",
-      whatsapp: "https://wa.me/message/THREATCROWD",
+      discord: "https://discord.gg/threatcrowd",
       twitter: "https://twitter.com/threatcrowd"
     }
   },
@@ -78,7 +78,7 @@ const providers = [
     features: ["Tool Directory", "Resource Collection", "Category Organization"],
     social: {
       instagram: "https://instagram.com/osintframework",
-      whatsapp: "https://wa.me/message/OSINT",
+      discord: "https://discord.gg/osint",
       twitter: "https://twitter.com/osintframework"
     }
   }
@@ -156,9 +156,9 @@ const ProvidersSection = () => {
                       variant="outline"
                       size="sm"
                       className="border-border text-foreground hover:bg-muted"
-                      onClick={() => window.open(provider.social.whatsapp, '_blank')}
+                      onClick={() => window.open(provider.social.discord, '_blank')}
                     >
-                      <MessageCircle size={16} />
+                      <MessageSquare size={16} />
                     </Button>
                     <Button
                       variant="outline"
