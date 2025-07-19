@@ -86,10 +86,10 @@ const providers = [
 
 const ProvidersSection = () => {
   return (
-    <section id="providers" className="py-20 bg-gradient-to-br from-purple-900/20 via-background to-pink-900/20">
+    <section id="providers" className="py-20 bg-background border-t border-border">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 bg-clip-text text-transparent mb-6">
+          <h2 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
             Trusted OSINT Providers
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -102,17 +102,17 @@ const ProvidersSection = () => {
           {providers.map((provider, index) => (
             <Card 
               key={provider.name} 
-              className="bg-gradient-to-br from-purple-500/5 via-card to-pink-500/5 border border-purple-300/20 hover:border-purple-400/40 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 group backdrop-blur-sm"
+              className="bg-card border-2 border-border hover:border-foreground/20 transition-all duration-300 hover:shadow-xl group"
             >
               <CardContent className="p-8">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-all">
-                      <provider.icon className="text-purple-400" size={28} />
+                    <div className="p-3 bg-foreground/5 hover:bg-foreground/10 rounded-xl transition-colors border border-border">
+                      <provider.icon className="text-foreground" size={28} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-foreground mb-1">{provider.name}</h3>
-                      <span className="text-sm text-pink-400 font-medium">{provider.category}</span>
+                      <span className="text-sm text-muted-foreground font-medium border border-border px-2 py-1 rounded-md bg-muted/50">{provider.category}</span>
                     </div>
                   </div>
                 </div>
@@ -126,7 +126,7 @@ const ProvidersSection = () => {
                     {provider.features.map((feature) => (
                       <span 
                         key={feature}
-                        className="px-3 py-1 bg-purple-500/10 text-purple-300 text-sm rounded-full border border-purple-400/20 hover:bg-purple-500/20 transition-colors"
+                        className="px-3 py-1 bg-muted text-muted-foreground text-sm rounded-full border border-border hover:bg-foreground/5 transition-colors"
                       >
                         {feature}
                       </span>
@@ -136,7 +136,7 @@ const ProvidersSection = () => {
 
                 <div className="space-y-3">
                   <Button
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-lg transition-all duration-300"
+                    className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold py-3 rounded-lg transition-all duration-300"
                     onClick={() => window.open(provider.url, '_blank')}
                   >
                     Visit Provider
@@ -147,7 +147,7 @@ const ProvidersSection = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-purple-400/30 text-purple-400 hover:bg-purple-500/10"
+                      className="border-border text-foreground hover:bg-muted"
                       onClick={() => window.open(provider.social.instagram, '_blank')}
                     >
                       <Instagram size={16} />
@@ -155,7 +155,7 @@ const ProvidersSection = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-green-400/30 text-green-400 hover:bg-green-500/10"
+                      className="border-border text-foreground hover:bg-muted"
                       onClick={() => window.open(provider.social.whatsapp, '_blank')}
                     >
                       <MessageCircle size={16} />
@@ -163,7 +163,7 @@ const ProvidersSection = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-blue-400/30 text-blue-400 hover:bg-blue-500/10"
+                      className="border-border text-foreground hover:bg-muted"
                       onClick={() => window.open(provider.social.twitter, '_blank')}
                     >
                       <Twitter size={16} />
@@ -179,7 +179,7 @@ const ProvidersSection = () => {
           <p className="text-muted-foreground mb-6">Looking for a specific OSINT solution?</p>
           <Button
             variant="outline"
-            className="border-2 border-purple-400/30 text-purple-400 hover:bg-purple-500/10 hover:border-purple-400/50 px-8 py-3 font-semibold rounded-lg transition-all duration-300"
+            className="border-2 border-border text-foreground hover:bg-muted px-8 py-3 font-semibold rounded-lg transition-all duration-300"
           >
             Request Custom Recommendations
           </Button>
