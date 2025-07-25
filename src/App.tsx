@@ -14,6 +14,8 @@ import Providers from "./pages/Providers";
 import OSINT from "./pages/OSINT";
 import GoogleDork from "./pages/GoogleDork";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "@/context/AuthContext";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -62,60 +64,71 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollProgressBar />
-        <Routes>
-          <Route path="/" element={
-            <PageTransition>
-              <Index />
-            </PageTransition>
-          } />
-          <Route path="/tools" element={
-            <PageTransition>
-              <Tools />
-            </PageTransition>
-          } />
-          <Route path="/tools/:id" element={
-            <PageTransition>
-              <ToolDetail />
-            </PageTransition>
-          } />
-          <Route path="/submit" element={
-            <PageTransition>
-              <Submit />
-            </PageTransition>
-          } />
-          <Route path="/report" element={
-            <PageTransition>
-              <Report />
-            </PageTransition>
-          } />
-          <Route path="/providers" element={
-            <PageTransition>
-              <Providers />
-            </PageTransition>
-          } />
-          <Route path="/osint" element={
-            <PageTransition>
-              <OSINT />
-            </PageTransition>
-          } />
-          <Route path="/google-dork" element={
-            <PageTransition>
-              <GoogleDork />
-            </PageTransition>
-          } />
-          <Route path="*" element={
-            <PageTransition>
-              <NotFound />
-            </PageTransition>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollProgressBar />
+          <Routes>
+            <Route path="/" element={
+              <PageTransition>
+                <Index />
+              </PageTransition>
+            } />
+            <Route path="/tools" element={
+              <PageTransition>
+                <Tools />
+              </PageTransition>
+            } />
+            <Route path="/tools/:id" element={
+              <PageTransition>
+                <ToolDetail />
+              </PageTransition>
+            } />
+            <Route path="/submit" element={
+              <PageTransition>
+                <Submit />
+              </PageTransition>
+            } />
+            <Route path="/report" element={
+              <PageTransition>
+                <Report />
+              </PageTransition>
+            } />
+            <Route path="/providers" element={
+              <PageTransition>
+                <Providers />
+              </PageTransition>
+            } />
+            <Route path="/osint" element={
+              <PageTransition>
+                <OSINT />
+              </PageTransition>
+            } />
+            <Route path="/google-dork" element={
+              <PageTransition>
+                <GoogleDork />
+              </PageTransition>
+            } />
+            <Route path="/profile" element={
+              <PageTransition>
+                <Profile onLogout={function (): void {
+                  throw new Error("Function not implemented.");
+                } } />
+              </PageTransition>
+            } />
+            
+            {/* Catch-all route for 404 */}
+            <Route path="*" element={
+              <PageTransition>
+                <NotFound />
+              </PageTransition>
+            } />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

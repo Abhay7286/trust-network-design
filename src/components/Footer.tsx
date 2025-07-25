@@ -59,7 +59,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <div className="text-gray-400">
-            © 2024 CyberDirectory. Informational directory only.
+            © 2025 CyberDirectory. Informational directory only.
           </div>
         </div>
       </div>

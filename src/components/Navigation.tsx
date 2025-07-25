@@ -1,144 +1,86 @@
-
-import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Shield, User, Plus } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import AuthModal from "./AuthModal";
 
 const Navigation = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const location = useLocation();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const menuVariants = {
-    hidden: { 
-      opacity: 0, 
-      y: -20,
-      transition: { duration: 0.2 }
-    },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.3 }
-    }
+  const handleLogin = () => {
+    setAuthMode("login");
+    setAuthModalOpen(true);
   };
 
+  const handleSignup = () => {
+    setAuthMode("signup");
+    setAuthModalOpen(true);
+  };
+
+  const goToProfile = () => navigate("/profile");
+  const goToAddTool = () => navigate("/submit");
+
   return (
-    <motion.nav 
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-background/95 backdrop-blur-sm border-b border-border shadow-sm" : "bg-background"
-      }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center gap-2 group">
-            <motion.div 
-              className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center group-hover:bg-foreground/80 transition-colors duration-300"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <span className="text-background font-bold text-sm">CD</span>
-            </motion.div>
-            <motion.span 
-              className="text-xl font-bold text-foreground group-hover:text-foreground/70 transition-colors duration-300"
-              whileHover={{ x: 2 }}
-            >
-              CyberDirectory
-            </motion.span>
-          </Link>
-          
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
-            {[
-              { to: "/", label: "Home" },
-              { to: "/providers", label: "Find Providers" },
-              { to: "/osint", label: "OSINT" },
-              { to: "/google-dork", label: "Google Dork" }
-            ].map((item) => (
-              <motion.div key={item.to} className="relative">
-                <Link
-                  to={item.to}
-                  className="text-foreground hover:text-foreground/70 transition-colors duration-300 font-semibold relative group"
-                >
-                  {item.label}
-                  <motion.div
-                    className="absolute -bottom-1 left-0 w-full h-0.5 bg-foreground origin-left"
-                    initial={{ scaleX: 0 }}
-                    whileHover={{ scaleX: 1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </Link>
-              </motion.div>
-            ))}
+    <>
+      <header className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between px-4">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full">
+              <Shield className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="font-semibold text-lg">CyberDirectory</span>
           </div>
 
-          {/* Mobile Menu Button */}
-          <motion.button
-            className="md:hidden text-foreground"
-            onClick={() => setIsOpen(!isOpen)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={isOpen ? "close" : "menu"}
-                initial={{ rotate: 0, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {isOpen ? <X size={24} /> : <Menu size={24} />}
-              </motion.div>
-            </AnimatePresence>
-          </motion.button>
-        </div>
+          <nav className="flex items-center space-x-6">
+            <a href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Home
+            </a>
+            <a href="/providers" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Find Providers
+            </a>
+            <a href="/osint" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              OSINT
+            </a>
+            <a href="/google-dork" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Google Dork
+            </a>
 
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div 
-              className="md:hidden mt-4 pb-4 space-y-4 bg-background rounded-lg border border-border p-4 shadow-lg"
-              variants={menuVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-            >
-              {[
-                { to: "/", label: "Home" },
-                { to: "/providers", label: "Find Providers" },
-                { to: "/osint", label: "OSINT" },
-                { to: "/google-dork", label: "Google Dork" }
-              ].map((item, index) => (
-                <motion.div
-                  key={item.to}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.3 }}
-                >
-                  <Link
-                    to={item.to}
-                    className="block text-foreground hover:text-foreground/70 transition-colors duration-300 font-semibold hover:bg-muted p-2 rounded"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.nav>
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={goToAddTool} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Tool
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToProfile} className="gap-2">
+                  <User className="h-4 w-4" />
+                  Profile
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={handleLogin}>
+                  Login
+                </Button>
+                <Button size="sm" onClick={handleSignup}>
+                  Sign Up
+                </Button>
+              </div>
+            )}
+          </nav>
+        </div>
+      </header>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        mode={authMode}
+        onModeChange={setAuthMode}
+      />
+    </>
   );
 };
 
