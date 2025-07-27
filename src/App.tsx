@@ -113,9 +113,10 @@ const App = () => (
             } />
             <Route path="/profile" element={
               <PageTransition>
-                <Profile onLogout={function (): void {
-                  throw new Error("Function not implemented.");
-                } } />
+                <Profile onLogout={() => {
+                  // Handle logout logic here
+                  console.log("User logged out");
+                }} />
               </PageTransition>
             } />
             

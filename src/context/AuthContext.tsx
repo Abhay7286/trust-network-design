@@ -76,10 +76,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error
   }
 
-  const signOut = async () => {
+ const signOut = async () => {
+  try {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    
+    // Clear user state
+    setUser(null)
+    
+    // Optional: Clear any local storage
+    localStorage.removeItem('sb-auth-token')
+    
+    // Optional: Redirect after logout
+    window.location.href = '/' 
+  } catch (error) {
+    console.error('Logout error:', error)
+    throw error // Re-throw to handle in components
   }
+}
 
   const value: AuthContextType = {
     user,

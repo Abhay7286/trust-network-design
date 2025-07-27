@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { Heart, Star, ExternalLink } from "lucide-react";
-import type { Tool } from "@/lib/supabase";
+import { Heart, Star, ExternalLink, Github } from "lucide-react";
+import type { Tool } from "@/data/tools"; 
 
 interface ToolCardProps {
   tool: Tool;
@@ -37,9 +37,8 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
           .delete()
           .eq('user_id', user.id)
           .eq('tool_id', tool.id);
-        
         if (error) throw error;
-        
+
         toast({
           title: "Removed from wishlist",
           description: `${tool.name} has been removed from your wishlist.`,
@@ -47,21 +46,14 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
       } else {
         const { error } = await supabase
           .from('wishlist')
-          .insert([
-            {
-              user_id: user.id,
-              tool_id: tool.id
-            }
-          ]);
-        
+          .insert([{ user_id: user.id, tool_id: tool.id }]);
         if (error) throw error;
-        
+
         toast({
           title: "Added to wishlist",
           description: `${tool.name} has been added to your wishlist.`,
         });
       }
-      
       onWishlistChange?.();
     } catch (error) {
       toast({
@@ -79,13 +71,10 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
-            {tool.logo_url && (
-              <img 
-                src={tool.logo_url} 
-                alt={`${tool.name} logo`}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
-            )}
+            {/* Optional Logo Placeholder */}
+            <div className="bg-muted w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg text-primary">
+              {tool.name[0]}
+            </div>
             <div>
               <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
                 {tool.name}
@@ -95,7 +84,7 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
               </Badge>
             </div>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -103,9 +92,7 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
             disabled={isLoading}
             className="text-muted-foreground hover:text-primary"
           >
-            <Heart 
-              className={`h-5 w-5 ${isWishlisted ? 'fill-primary text-primary' : ''}`} 
-            />
+            <Heart className={`h-5 w-5 ${isWishlisted ? "fill-primary text-primary" : ""}`} />
           </Button>
         </div>
 
@@ -113,28 +100,42 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
           {tool.description}
         </p>
 
+        <div className="flex flex-wrap gap-1 mb-3">
+          {tool.tags.map((tag) => (
+            <Badge key={tag} variant="outline" className="text-xs">
+              #{tag}
+            </Badge>
+          ))}
+        </div>
+
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium">
-                {tool.average_rating.toFixed(1)}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                ({tool.total_reviews} reviews)
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <span className="text-sm font-medium">{tool.trustScore.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">({tool.votes} votes)</span>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(tool.website_url, '_blank')}
-            className="gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Visit
-          </Button>
+          <div className="flex items-center gap-2">
+            {tool.github && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open(tool.github, "_blank")}
+              >
+                <Github className="h-4 w-4" />
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(tool.website, "_blank")}
+              className="gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Visit
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

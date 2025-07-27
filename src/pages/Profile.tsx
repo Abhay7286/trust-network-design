@@ -9,17 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
-import ToolCard from "../components/ToolCard";
-import { User, Mail, Shield, Calendar, Settings, LogOut, Heart, Plus } from "lucide-react";
-import type { Tool } from "@/lib/supabase";
+import ToolCard from "@/components/ToolCard";
+import { User, Shield, Calendar, Settings, LogOut, Heart, Plus } from "lucide-react";
+import type { Tool } from "@/data/tools";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-interface UserProfileProps {
-  onLogout: () => void;
-}
-
-const Profile = ({ onLogout }: UserProfileProps) => {
+const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
     fullName: "",
@@ -32,65 +29,148 @@ const Profile = ({ onLogout }: UserProfileProps) => {
   const [wishlistTools, setWishlistTools] = useState<Tool[]>([]);
   const [userTools, setUserTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      fetchUserProfile();
-      fetchWishlistTools();
-      fetchUserTools();
+      Promise.all([
+        fetchUserProfile(),
+        fetchUserTools(),
+        fetchWishlistTools()
+      ]).finally(() => setLoading(false));
     }
   }, [user]);
 
   const fetchUserProfile = async () => {
     try {
-      // For now, use user metadata since Supabase tables might not be set up yet
-      setProfile({
-        fullName: user?.user_metadata?.full_name || "",
-        email: user?.email || "",
-        bio: "",
-        organization: "",
-        role: "",
-        joinDate: user?.created_at || ""
-      });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id);
 
-  const fetchWishlistTools = async () => {
-    try {
-      // For now, we'll use a simpler approach since the tables might not exist yet
-      setWishlistTools([]);
+      if (profileError) throw profileError;
+
+      if (!profileData || profileData.length === 0) {
+        const newProfile = {
+          id: user.id,
+          full_name: user.user_metadata?.full_name || "",
+          email: user.email || "",
+          bio: "",
+          organization: "",
+          role: "",
+          created_at: new Date().toISOString()
+        };
+
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert(newProfile);
+
+        if (insertError) throw insertError;
+
+        setProfile({
+          fullName: newProfile.full_name,
+          email: newProfile.email,
+          bio: newProfile.bio,
+          organization: newProfile.organization,
+          role: newProfile.role,
+          joinDate: newProfile.created_at
+        });
+      } else {
+        const existingProfile = profileData[0];
+        setProfile({
+          fullName: existingProfile.full_name || "",
+          email: existingProfile.email || user.email || "",
+          bio: existingProfile.bio || "",
+          organization: existingProfile.organization || "",
+          role: existingProfile.role || "",
+          joinDate: existingProfile.created_at || user.created_at || ""
+        });
+      }
     } catch (error) {
-      console.error('Error fetching wishlist:', error);
+      console.error("Error fetching profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data",
+        variant: "destructive"
+      });
     }
   };
 
   const fetchUserTools = async () => {
     try {
-      // For now, we'll use a simpler approach since the tables might not exist yet
-      setUserTools([]);
+      const { data, error } = await supabase
+        .from("tools")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setUserTools(data as Tool[]);
     } catch (error) {
-      console.error('Error fetching user tools:', error);
+      console.error("Error fetching user tools:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load your tools",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchWishlistTools = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("wishlist")
+        .select("tool:tool_id(*)")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      const tools = data.map((item: any) => item.tool);
+      setWishlistTools(tools as Tool[]);
+    } catch (error) {
+      console.error("Error fetching wishlist tools:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load wishlist",
+        variant: "destructive"
+      });
     }
   };
 
   const handleSave = async () => {
     try {
-      // For now, just update the local state since database might not be set up
+      const updates = {
+        full_name: profile.fullName || null,
+        email: profile.email || null,
+        bio: profile.bio || null,
+        organization: profile.organization || null,
+        role: profile.role || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          ...updates,
+          created_at: profile.joinDate || new Date().toISOString()
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
       setIsEditing(false);
+      await fetchUserProfile();
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error.message || "Failed to update profile.",
         variant: "destructive"
       });
     }
@@ -99,17 +179,21 @@ const Profile = ({ onLogout }: UserProfileProps) => {
   const handleLogout = async () => {
     try {
       await signOut();
-      onLogout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      navigate("/");
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to logout. Please try again.",
+        title: "Logout failed",
+        description: error.message || "Could not sign out",
         variant: "destructive"
       });
     }
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-4xl mx-auto">
@@ -128,7 +212,6 @@ const Profile = ({ onLogout }: UserProfileProps) => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Profile Header */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -149,9 +232,13 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
                 </Button>
               </div>
             </div>
@@ -159,7 +246,6 @@ const Profile = ({ onLogout }: UserProfileProps) => {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Profile Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -173,7 +259,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                 <Input
                   id="fullName"
                   value={profile.fullName}
-                  onChange={(e) => setProfile({...profile, fullName: e.target.value})}
+                  onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
                   disabled={!isEditing}
                 />
               </div>
@@ -183,7 +269,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                 <Input
                   id="email"
                   value={profile.email}
-                  onChange={(e) => setProfile({...profile, email: e.target.value})}
+                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                   disabled={!isEditing}
                 />
               </div>
@@ -193,7 +279,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                 <Input
                   id="organization"
                   value={profile.organization}
-                  onChange={(e) => setProfile({...profile, organization: e.target.value})}
+                  onChange={(e) => setProfile({ ...profile, organization: e.target.value })}
                   disabled={!isEditing}
                 />
               </div>
@@ -203,7 +289,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                 <Input
                   id="role"
                   value={profile.role}
-                  onChange={(e) => setProfile({...profile, role: e.target.value})}
+                  onChange={(e) => setProfile({ ...profile, role: e.target.value })}
                   disabled={!isEditing}
                 />
               </div>
@@ -216,7 +302,6 @@ const Profile = ({ onLogout }: UserProfileProps) => {
             </CardContent>
           </Card>
 
-          {/* Account Stats */}
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -239,7 +324,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <Input
                       id="fullName"
                       value={profile.fullName}
-                      onChange={(e) => setProfile({...profile, fullName: e.target.value})}
+                      onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
                       disabled={!isEditing}
                     />
                   </div>
@@ -249,7 +334,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <Input
                       id="email"
                       value={profile.email}
-                      onChange={(e) => setProfile({...profile, email: e.target.value})}
+                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                       disabled={!isEditing}
                     />
                   </div>
@@ -259,7 +344,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <Textarea
                       id="bio"
                       value={profile.bio}
-                      onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                      onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                       disabled={!isEditing}
                       placeholder="Tell us about yourself..."
                     />
@@ -270,7 +355,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <Input
                       id="organization"
                       value={profile.organization}
-                      onChange={(e) => setProfile({...profile, organization: e.target.value})}
+                      onChange={(e) => setProfile({ ...profile, organization: e.target.value })}
                       disabled={!isEditing}
                     />
                   </div>
@@ -280,7 +365,7 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <Input
                       id="role"
                       value={profile.role}
-                      onChange={(e) => setProfile({...profile, role: e.target.value})}
+                      onChange={(e) => setProfile({ ...profile, role: e.target.value })}
                       disabled={!isEditing}
                     />
                   </div>
@@ -320,7 +405,6 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                       key={tool.id}
                       tool={tool}
                       isWishlisted={true}
-                      onWishlistChange={fetchWishlistTools}
                     />
                   ))}
                 </div>
@@ -344,7 +428,6 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <ToolCard
                       key={tool.id}
                       tool={tool}
-                      onWishlistChange={fetchWishlistTools}
                     />
                   ))}
                 </div>
@@ -364,7 +447,9 @@ const Profile = ({ onLogout }: UserProfileProps) => {
                     <span className="text-sm font-medium">Member Since</span>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'N/A'}</span>
+                      <span className="text-sm">
+                        {profile.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'N/A'}
+                      </span>
                     </div>
                   </div>
                   <Separator />
