@@ -1,11 +1,12 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Shield, ExternalLink, Github, Heart, MessageCircle, Calendar } from "lucide-react";
+import { Star, Shield, ExternalLink, Github, Heart, ArrowUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
-import { tools, getToolsByCategory, getToolsByType, searchTools } from "@/data/tools";
-import { useState } from "react";
+import { fetchTools, toggleWishlist, upvoteTool, fetchWishlistedTools, Tool } from "@/data/tools";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ToolsListProps {
   searchQuery: string;
@@ -16,9 +17,48 @@ interface ToolsListProps {
 }
 
 const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMode }: ToolsListProps) => {
-  const [likedTools, setLikedTools] = useState<string[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [wishlistedTools, setWishlistedTools] = useState<string[]>([]);
+  const [votedTools, setVotedTools] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Filter tools based on search and filters
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [toolsData, wishlistData] = await Promise.all([
+          fetchTools(),
+          user ? fetchWishlistedTools(user.id) : Promise.resolve([])
+        ]);
+        setTools(toolsData);
+        setWishlistedTools(wishlistData);
+      } catch (err) {
+        console.error("Failed to load data:", {
+          error: err,
+          message: err instanceof Error ? err.message : "Unknown error"
+        });
+        setError(err instanceof Error ? err.message : 'Failed to load tools');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user]);
+
+  const searchTools = (query: string) => {
+    return tools.filter(tool => 
+      tool.name.toLowerCase().includes(query.toLowerCase()) ||
+      tool.description.toLowerCase().includes(query.toLowerCase()) ||
+      (tool.tags && tool.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
+    );
+  };
+
+  const normalizeFilterValue = (value: string) => value.toLowerCase().replace(/\s+/g, '-');
+
   let filteredTools = tools;
 
   if (searchQuery) {
@@ -27,56 +67,122 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
 
   if (selectedCategory !== "all") {
     filteredTools = filteredTools.filter(tool => 
-      tool.category.toLowerCase().replace(" ", "-") === selectedCategory
+      tool.category && normalizeFilterValue(tool.category) === selectedCategory
     );
   }
 
   if (selectedType !== "all") {
-    filteredTools = filteredTools.filter(tool => 
-      tool.type.toLowerCase().replace(" ", "-") === selectedType
-    );
+    filteredTools = filteredTools.filter(tool => {
+      if (!tool.type) return false;
+      return normalizeFilterValue(tool.type) === selectedType;
+    });
   }
 
-  // Sort tools
   const sortedTools = [...filteredTools].sort((a, b) => {
     switch (sortBy) {
       case "name":
         return a.name.localeCompare(b.name);
       case "trust-score":
-        return b.trustScore - a.trustScore;
+        return (b.trust_score || 0) - (a.trust_score || 0);
       case "popularity":
-        return b.votes - a.votes;
+        return (b.votes || 0) - (a.votes || 0);
       case "recent":
-        return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
+        return new Date(b.last_updated || 0).getTime() - new Date(a.last_updated || 0).getTime();
       default:
         return 0;
     }
   });
 
-  const handleLikeToggle = (toolId: string) => {
-    setLikedTools(prev => 
-      prev.includes(toolId) 
-        ? prev.filter(id => id !== toolId)
-        : [...prev, toolId]
-    );
+  const handleWishlistToggle = async (toolId: string) => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to manage your wishlist.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const isWishlisted = wishlistedTools.includes(toolId);
+      await toggleWishlist(user.id, toolId, isWishlisted);
+
+      setWishlistedTools(prev =>
+        isWishlisted
+          ? prev.filter(id => id !== toolId)
+          : [...prev, toolId]
+      );
+
+      toast({
+        title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
+        description: `Tool has been ${isWishlisted ? "removed from" : "added to"} your wishlist.`,
+      });
+    } catch (err) {
+      console.error("Wishlist error:", err);
+      setError(err instanceof Error ? err.message : 'Failed to update wishlist');
+    }
+  };
+
+  const handleUpvote = async (toolId: string) => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to vote for tools.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await upvoteTool(user.id, toolId);
+
+      if (error) {
+        toast({
+          title: "Vote failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setTools(prev => prev.map(tool =>
+        tool.id === toolId ? { ...tool, votes: (tool.votes || 0) + 1 } : tool
+      ));
+      setVotedTools(prev => [...prev, toolId]);
+
+      toast({
+        title: "Vote recorded",
+        description: "Your vote has been counted!",
+      });
+    } catch (error) {
+      console.error('Error handling upvote:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record vote",
+        variant: "destructive"
+      });
+    }
   };
 
   const getTypeColor = (type: string) => {
-    switch (type) {
-      case "Free":
+    if (!type) return "bg-gray-100 text-gray-800 border-gray-200";
+    
+    switch (type.toLowerCase()) {
+      case "free":
         return "bg-green-100 text-green-800 border-green-200";
-      case "Open Source":
+      case "open source":
+      case "open-source":
         return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Paid":
+      case "paid":
         return "bg-red-100 text-red-800 border-red-200";
-      case "Freemium":
+      case "freemium":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
-  const ToolCard = ({ tool }: { tool: typeof tools[0] }) => (
+  const ToolCard = ({ tool }: { tool: Tool }) => (
     <Card className="h-full hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -92,22 +198,22 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
           </div>
           <div className="flex flex-col items-end space-y-1 ml-4">
             <Badge variant="secondary" className="text-xs">
-              {tool.category}
+              {tool.category || "Uncategorized"}
             </Badge>
             <Badge variant="outline" className={`text-xs ${getTypeColor(tool.type)}`}>
-              {tool.type}
+              {tool.type || "Unknown"}
             </Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex flex-wrap gap-1 mb-3">
-          {tool.tags.slice(0, 3).map((tag) => (
+          {(tool.tags || []).slice(0, 3).map((tag) => (
             <Badge key={tag} variant="outline" className="text-xs">
               {tag}
             </Badge>
           ))}
-          {tool.tags.length > 3 && (
+          {tool.tags && tool.tags.length > 3 && (
             <Badge variant="outline" className="text-xs">
               +{tool.tags.length - 3}
             </Badge>
@@ -118,22 +224,22 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Shield className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">{tool.trustScore}</span>
+              <span className="text-sm font-medium">{tool.trust_score || 0}</span>
             </div>
-            {tool.githubStars > 0 && (
+            {(tool.github_stars || 0) > 0 && (
               <div className="flex items-center space-x-1">
                 <Star className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm">{tool.githubStars.toLocaleString()}</span>
+                <span className="text-sm">{(tool.github_stars || 0).toLocaleString()}</span>
               </div>
             )}
             <div className="flex items-center space-x-1">
-              <Heart className={`h-4 w-4 ${likedTools.includes(tool.id) ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
-              <span className="text-sm">{tool.votes}</span>
+              <ArrowUp className={`h-4 w-4 ${votedTools.includes(tool.id) ? 'text-primary fill-current' : 'text-gray-400'}`} />
+              <span className="text-sm">{tool.votes || 0}</span>
             </div>
           </div>
           <div className="flex items-center space-x-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
-            <span>{new Date(tool.lastUpdated).toLocaleDateString()}</span>
+            <span>{tool.last_updated ? new Date(tool.last_updated).toLocaleDateString() : "Unknown"}</span>
           </div>
         </div>
         
@@ -142,10 +248,20 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
             <Button 
               size="sm" 
               variant="outline" 
-              onClick={() => handleLikeToggle(tool.id)}
-              className={likedTools.includes(tool.id) ? 'text-red-500 border-red-200' : ''}
+              onClick={() => handleWishlistToggle(tool.id)}
+              disabled={!user}
+              className={wishlistedTools.includes(tool.id) ? 'text-red-500 border-red-200' : ''}
             >
-              <Heart className={`h-3 w-3 ${likedTools.includes(tool.id) ? 'fill-current' : ''}`} />
+              <Heart className={`h-3 w-3 ${wishlistedTools.includes(tool.id) ? 'fill-current' : ''}`} />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleUpvote(tool.id)}
+              disabled={!user || votedTools.includes(tool.id)}
+              className={votedTools.includes(tool.id) ? 'text-primary' : ''}
+            >
+              <ArrowUp className={`h-3 w-3 ${votedTools.includes(tool.id) ? 'fill-current' : ''}`} />
             </Button>
             <Button size="sm" variant="outline" asChild>
               <a href={tool.website} target="_blank" rel="noopener noreferrer">
@@ -168,7 +284,7 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
     </Card>
   );
 
-  const ToolListItem = ({ tool }: { tool: typeof tools[0] }) => (
+  const ToolListItem = ({ tool }: { tool: Tool }) => (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -185,24 +301,24 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
                 </p>
                 <div className="flex items-center space-x-4 mt-2">
                   <Badge variant="secondary" className="text-xs">
-                    {tool.category}
+                    {tool.category || "Uncategorized"}
                   </Badge>
                   <Badge variant="outline" className={`text-xs ${getTypeColor(tool.type)}`}>
-                    {tool.type}
+                    {tool.type || "Unknown"}
                   </Badge>
                   <div className="flex items-center space-x-1">
                     <Shield className="h-3 w-3 text-primary" />
-                    <span className="text-sm">{tool.trustScore}</span>
+                    <span className="text-sm">{tool.trust_score || 0}</span>
                   </div>
-                  {tool.githubStars > 0 && (
+                  {(tool.github_stars || 0) > 0 && (
                     <div className="flex items-center space-x-1">
                       <Star className="h-3 w-3 text-yellow-500" />
-                      <span className="text-sm">{tool.githubStars.toLocaleString()}</span>
+                      <span className="text-sm">{(tool.github_stars || 0).toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex items-center space-x-1">
-                    <Heart className={`h-3 w-3 ${likedTools.includes(tool.id) ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
-                    <span className="text-sm">{tool.votes}</span>
+                    <ArrowUp className={`h-3 w-3 ${votedTools.includes(tool.id) ? 'text-primary fill-current' : 'text-gray-400'}`} />
+                    <span className="text-sm">{tool.votes || 0}</span>
                   </div>
                 </div>
               </div>
@@ -212,10 +328,20 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
             <Button 
               size="sm" 
               variant="outline" 
-              onClick={() => handleLikeToggle(tool.id)}
-              className={likedTools.includes(tool.id) ? 'text-red-500 border-red-200' : ''}
+              onClick={() => handleWishlistToggle(tool.id)}
+              disabled={!user}
+              className={wishlistedTools.includes(tool.id) ? 'text-red-500 border-red-200' : ''}
             >
-              <Heart className={`h-3 w-3 ${likedTools.includes(tool.id) ? 'fill-current' : ''}`} />
+              <Heart className={`h-3 w-3 ${wishlistedTools.includes(tool.id) ? 'fill-current' : ''}`} />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => handleUpvote(tool.id)}
+              disabled={!user || votedTools.includes(tool.id)}
+              className={votedTools.includes(tool.id) ? 'text-primary' : ''}
+            >
+              <ArrowUp className={`h-3 w-3 ${votedTools.includes(tool.id) ? 'fill-current' : ''}`} />
             </Button>
             <Button size="sm" variant="outline" asChild>
               <a href={tool.website} target="_blank" rel="noopener noreferrer">
@@ -238,6 +364,29 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
     </Card>
   );
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <p>Loading tools...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center text-red-500 py-12">
+          <p>{error}</p>
+          <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -245,8 +394,8 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
         <p className="text-muted-foreground">
           Found {sortedTools.length} tools
           {searchQuery && ` matching "${searchQuery}"`}
-          {selectedCategory !== "all" && ` in ${selectedCategory}`}
-          {selectedType !== "all" && ` (${selectedType})`}
+          {selectedCategory !== "all" && ` in ${selectedCategory.replace('-', ' ')}`}
+          {selectedType !== "all" && ` (${selectedType.replace('-', ' ')})`}
         </p>
       </div>
 

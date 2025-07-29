@@ -1,5 +1,8 @@
-
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Tool } from "@/data/tools";
+import Loader from "@/components/Loader";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,17 +21,103 @@ import {
   Share2,
   MessageCircle
 } from "lucide-react";
-import { getToolById, getRelatedTools } from "@/data/tools";
-import { useState } from "react";
 
 const ToolDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const tool = id ? getToolById(id) : null;
-  const relatedTools = id ? getRelatedTools(id) : [];
+  const [tool, setTool] = useState<Tool | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [relatedTools, setRelatedTools] = useState<Tool[]>([]);
   const [isLiked, setIsLiked] = useState(false);
-  const [votes, setVotes] = useState(tool?.votes || 0);
+  const [votes, setVotes] = useState(0);
 
-  if (!tool) {
+useEffect(() => {
+  const fetchTools = async () => {
+    const { data, error } = await supabase.from("tools").select("*");
+
+    if (error) {
+      console.error("Error fetching tools:", error);
+      return;
+    }
+
+    const parsePgArray = (str: string | null | undefined) =>
+      str?.startsWith("{") ? str.replace(/^{|}$/g, "").split(",") : [];
+
+    const fixedTools = data.map((tool) => ({
+      ...tool,
+      tags: Array.isArray(tool.tags)
+        ? tool.tags
+        : parsePgArray(tool.tags),
+    }));
+
+    const foundTool = fixedTools.find((t) => String(t.id) === String(id));
+    if (foundTool) {
+      setTool(foundTool);
+      setVotes(foundTool.votes || 0);
+      setIsLiked(false); // Optionally, set based on user/session
+      setError(null);
+    } else {
+      setTool(null);
+      setError("Tool not found");
+    }
+    setLoading(false);
+  };
+
+  fetchTools();
+}, [id]);
+
+
+const handleLikeToggle = async () => {
+  if (!tool) return;
+
+  try {
+    const newLikeStatus = !isLiked;
+    const updatedVotes = newLikeStatus ? votes + 1 : votes - 1;
+
+    setIsLiked(newLikeStatus);
+    setVotes(updatedVotes);
+
+    const { error } = await supabase
+      .from("tools")
+      .update({ votes: updatedVotes })
+      .eq("id", tool.id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating votes:", error);
+    // Revert UI in case of failure
+    setIsLiked((prev) => !prev);
+    setVotes((prev) => prev); // or reset to previous value if tracked
+  }
+};
+
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "Free":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "Open Source":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Paid":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "Freemium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <Loader />
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !tool) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -47,26 +136,6 @@ const ToolDetail = () => {
       </div>
     );
   }
-
-  const handleLikeToggle = () => {
-    setIsLiked(!isLiked);
-    setVotes(prev => isLiked ? prev - 1 : prev + 1);
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "Free":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "Open Source":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Paid":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Freemium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -119,7 +188,7 @@ const ToolDetail = () => {
                       <h3 className="font-semibold mb-2">Trust Score</h3>
                       <div className="flex items-center space-x-2">
                         <Shield className="h-5 w-5 text-primary" />
-                        <span className="text-xl font-bold">{tool.trustScore}</span>
+                        <span className="text-xl font-bold">{tool.trust_score}</span>
                         <span className="text-muted-foreground">out of 5</span>
                       </div>
                     </div>
@@ -130,10 +199,10 @@ const ToolDetail = () => {
                           <Heart className={`h-4 w-4 ${isLiked ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
                           <span>{votes} votes</span>
                         </div>
-                        {tool.githubStars > 0 && (
+                        {tool.github_stars > 0 && (
                           <div className="flex items-center space-x-1">
                             <Star className="h-4 w-4 text-yellow-500" />
-                            <span>{tool.githubStars.toLocaleString()} stars</span>
+                            <span>{tool.github_stars.toLocaleString()} stars</span>
                           </div>
                         )}
                       </div>
@@ -156,14 +225,14 @@ const ToolDetail = () => {
                       <h3 className="font-semibold mb-2">Last Updated</h3>
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(tool.lastUpdated).toLocaleDateString()}</span>
+                        <span>{new Date(tool.last_updated).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <div>
                       <h3 className="font-semibold mb-2">Submitted By</h3>
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="capitalize">{tool.submittedBy}</span>
+                        <span className="capitalize">{tool.submitted_by}</span>
                       </div>
                     </div>
                   </div>
@@ -246,7 +315,7 @@ const ToolDetail = () => {
                           </div>
                           <div className="flex items-center space-x-1">
                             <Shield className="h-3 w-3 text-primary" />
-                            <span className="text-sm">{relatedTool.trustScore}</span>
+                            <span className="text-sm">{relatedTool.trust_score}</span>
                           </div>
                         </div>
                       ))}

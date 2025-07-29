@@ -3,75 +3,106 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Heart, Star, ExternalLink, Github } from "lucide-react";
-import type { Tool } from "@/data/tools"; 
+import {
+  Tool,
+  toggleWishlist,
+  upvoteTool
+} from "@/data/tools";
+import { getValidUrl } from "@/hooks/valid-url";
 
 interface ToolCardProps {
   tool: Tool;
   isWishlisted?: boolean;
   onWishlistChange?: () => void;
+  onVoteSuccess?: () => void;
 }
 
-const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProps) => {
-  const [isLoading, setIsLoading] = useState(false);
+const ToolCard = ({
+  tool,
+  isWishlisted = false,
+  onWishlistChange,
+  onVoteSuccess
+}: ToolCardProps) => {
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  if (!tool) {
+    return <div className="border p-4 rounded-lg">Error: Invalid tool data</div>;
+  }
 
   const handleWishlistToggle = async () => {
     if (!user) {
       toast({
         title: "Login required",
-        description: "Please login to add tools to your wishlist.",
+        description: "Please login to manage your wishlist.",
         variant: "destructive"
       });
       return;
     }
 
-    setIsLoading(true);
+    setIsWishlistLoading(true);
     try {
-      if (isWishlisted) {
-        const { error } = await supabase
-          .from('wishlist')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('tool_id', tool.id);
-        if (error) throw error;
+      const { error } = await toggleWishlist(user.id, tool.id, isWishlisted);
+      if (error) throw error;
 
-        toast({
-          title: "Removed from wishlist",
-          description: `${tool.name} has been removed from your wishlist.`,
-        });
-      } else {
-        const { error } = await supabase
-          .from('wishlist')
-          .insert([{ user_id: user.id, tool_id: tool.id }]);
-        if (error) throw error;
+      toast({
+        title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
+        description: `${tool.name} has been ${isWishlisted ? "removed from" : "added to"} your wishlist.`,
+      });
 
-        toast({
-          title: "Added to wishlist",
-          description: `${tool.name} has been added to your wishlist.`,
-        });
-      }
       onWishlistChange?.();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update wishlist. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update wishlist",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsWishlistLoading(false);
+    }
+  };
+
+  const handleVote = async () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to vote for tools.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsVoting(true);
+    try {
+      const { error } = await upvoteTool(user.id, tool.id);
+      if (error) throw error;
+
+      toast({
+        title: "Vote recorded",
+        description: `Your vote for ${tool.name} has been counted.`,
+      });
+
+      onVoteSuccess?.();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to record vote",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVoting(false);
     }
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50">
-      <CardContent className="p-6">
+    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 h-full flex flex-col">
+      <CardContent className="p-6 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
-            {/* Optional Logo Placeholder */}
             <div className="bg-muted w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg text-primary">
               {tool.name[0]}
             </div>
@@ -89,7 +120,7 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
             variant="ghost"
             size="sm"
             onClick={handleWishlistToggle}
-            disabled={isLoading}
+            disabled={isWishlistLoading}
             className="text-muted-foreground hover:text-primary"
           >
             <Heart className={`h-5 w-5 ${isWishlisted ? "fill-primary text-primary" : ""}`} />
@@ -101,18 +132,21 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
         </p>
 
         <div className="flex flex-wrap gap-1 mb-3">
-          {tool.tags.map((tag) => (
+          {(tool.tags || []).map((tag) => (
             <Badge key={tag} variant="outline" className="text-xs">
               #{tag}
             </Badge>
           ))}
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mt-auto">
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+            onClick={handleVote}
+          >
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{tool.trustScore.toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground">({tool.votes} votes)</span>
+            <span className="text-sm font-medium">{(tool.trust_score || 0).toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">({tool.votes ?? 0} votes)</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -129,8 +163,20 @@ const ToolCard = ({ tool, isWishlisted = false, onWishlistChange }: ToolCardProp
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(tool.website, "_blank")}
+              onClick={() => {
+                const validUrl = getValidUrl(tool.website);
+                if (!validUrl) {
+                  toast({
+                    title: "Invalid website URL",
+                    description: "This tool has an invalid or missing website link",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                window.open(validUrl, "_blank", "noopener,noreferrer");
+              }}
               className="gap-2"
+              disabled={!tool.website} // Disable button if no website
             >
               <ExternalLink className="h-4 w-4" />
               Visit

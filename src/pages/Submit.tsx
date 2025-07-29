@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase"; // Adjust the import path as needed
 
 const Submit = () => {
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
   const [formData, setFormData] = useState({
@@ -48,32 +50,64 @@ const Submit = () => {
     "Freemium"
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     // Validate required fields
-    if (!formData.name || !formData.description || !formData.website || !formData.category || !formData.type || !formData.submitterEmail) {
+    if (!formData.name || !formData.description || !formData.category || !formData.type || !formData.submitterEmail) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
         variant: "destructive"
       });
+      setIsSubmitting(false);
       return;
     }
 
-    // Simulate submission
-    console.log("Tool submission:", {
-      ...formData,
-      tags,
-      submittedAt: new Date().toISOString()
-    });
+    try {
+      // Insert the tool submission into Supabase
+      const { data, error } = await supabase
+        .from('tool_submissions') // or 'tools' if you want to insert directly
+        .insert([{
+          name: formData.name,
+          description: formData.description,
+          website: formData.website,
+          github: formData.github,
+          category: formData.category,
+          type: formData.type,
+          tags: tags,
+          submitted_by: formData.submitterName || 'Anonymous',
+          submitter_email: formData.submitterEmail,
+          reason_for_submission: formData.reasonForSubmission,
+          status: 'pending', // Add a status field for moderation
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          trust_score: 0, // Initial trust score
+          votes: 0 // Initial votes
+        }])
+        .select();
 
-    setIsSubmitted(true);
-    
-    toast({
-      title: "Submission Successful!",
-      description: "Your tool has been submitted for review. We'll notify you once it's approved.",
-    });
+      if (error) {
+        throw error;
+      }
+
+      setIsSubmitted(true);
+      
+      toast({
+        title: "Submission Successful!",
+        description: "Your tool has been submitted for review. We'll notify you once it's approved.",
+      });
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your tool. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const addTag = () => {
@@ -325,8 +359,8 @@ const Submit = () => {
                     </p>
                   </div>
                   
-                  <Button type="submit" className="w-full">
-                    Submit Tool for Review
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit Tool for Review"}
                   </Button>
                 </form>
               </CardContent>

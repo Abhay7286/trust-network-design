@@ -7,17 +7,26 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database types
 export interface Tool {
-  id: string
-  name: string
-  description: string
-  category: string
-  website_url: string
-  logo_url?: string
-  created_at: string
-  created_by: string
-  featured: boolean
-  average_rating: number
-  total_reviews: number
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  created_at: string;
+  type: "Free" | "Open Source" | "Paid" | "Freemium";
+  trust_score: number;
+  github_stars: number;
+  website: string;
+  github?: string;
+  tags: string[];        
+  last_updated: string;    
+  submitted_by: string;   
+  votes: number;          
+  related_tools: string[]; 
+  logo_url?: string;
+  created_by: string; // User ID of the creator
+  featured: boolean; // Indicates if the tool is featured
+  average_rating?: number; // Optional average rating
+  total_reviews?: number; // Optional total reviews count
 }
 
 export interface Review {
