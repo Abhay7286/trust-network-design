@@ -117,6 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 /**
  * Whatever value the auth provides I pass it down as context to other pages.
  */
+
   const value: AuthContextType = {
     user,
     loading,

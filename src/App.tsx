@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import Tools from "./pages/Tools";
 import ToolDetail from "./pages/ToolDetail";
+import ToolAI from "./pages/ToolAI";
 import Submit from "./pages/Submit";
 import Report from "./pages/Report";
 import Providers from "./pages/Providers";
@@ -84,6 +85,11 @@ const App = () => (
             <Route path="/tools/:id" element={
               <PageTransition>
                 <ToolDetail />
+              </PageTransition>
+            } />
+            <Route path="/tools/:id/ai" element={
+              <PageTransition>
+                <ToolAI />
               </PageTransition>
             } />
             <Route path="/submit" element={

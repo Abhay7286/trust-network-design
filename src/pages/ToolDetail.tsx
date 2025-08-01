@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
 import { 
   Shield, 
   ExternalLink, 
@@ -277,6 +278,13 @@ const handleLikeToggle = async () => {
                       Visit Official Site
                     </a>
                   </Button>
+                  <Button asChild>
+                    <Link to={`/tools/${tool.id}/ai`}>
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Ask AI
+                    </Link>
+                  </Button>
+                  <Button asChild>
                   {tool.github && (
                     <Button variant="outline" className="w-full" asChild>
                       <a href={tool.github} target="_blank" rel="noopener noreferrer">
@@ -285,6 +293,7 @@ const handleLikeToggle = async () => {
                       </a>
                     </Button>
                   )}
+                  </Button>
                   <Button variant="outline" className="w-full" asChild>
                     <Link to={`/report?tool=${tool.id}`}>
                       <Flag className="mr-2 h-4 w-4" />
