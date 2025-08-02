@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import Tools from "./pages/Tools";
 import ToolDetail from "./pages/ToolDetail";
+import ToolAI from "./pages/ToolAI";
 import Submit from "./pages/Submit";
 import Report from "./pages/Report";
 import Providers from "./pages/Providers";
@@ -71,61 +72,94 @@ const App = () => (
         <BrowserRouter>
           <ScrollProgressBar />
           <Routes>
-            <Route path="/" element={
-              <PageTransition>
-                <Index />
-              </PageTransition>
-            } />
-            <Route path="/tools" element={
-              <PageTransition>
-                <Tools />
-              </PageTransition>
-            } />
-            <Route path="/tools/:id" element={
-              <PageTransition>
-                <ToolDetail />
-              </PageTransition>
-            } />
-            <Route path="/submit" element={
-              <PageTransition>
-                <Submit />
-              </PageTransition>
-            } />
-            <Route path="/report" element={
-              <PageTransition>
-                <Report />
-              </PageTransition>
-            } />
-            <Route path="/providers" element={
-              <PageTransition>
-                <Providers />
-              </PageTransition>
-            } />
-            <Route path="/osint" element={
-              <PageTransition>
-                <OSINT />
-              </PageTransition>
-            } />
-            <Route path="/google-dork" element={
-              <PageTransition>
-                <GoogleDork />
-              </PageTransition>
-            } />
-            <Route path="/profile" element={
-              <PageTransition>
-                <Profile onLogout={() => {
-                  // Handle logout logic here
-                  console.log("User logged out");
-                }} />
-              </PageTransition>
-            } />
-            
-            {/* Catch-all route for 404 */}
-            <Route path="*" element={
-              <PageTransition>
-                <NotFound />
-              </PageTransition>
-            } />
+            <Route
+              path="/"
+              element={
+                <PageTransition>
+                  <Index />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/tools"
+              element={
+                <PageTransition>
+                  <Tools />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/tools/:id"
+              element={
+                <PageTransition>
+                  <ToolDetail />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/tools/:id/ai"
+              element={
+                <PageTransition>
+                  <ToolAI />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/submit"
+              element={
+                <PageTransition>
+                  <Submit />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/report"
+              element={
+                <PageTransition>
+                  <Report />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/providers"
+              element={
+                <PageTransition>
+                  <Providers />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/osint"
+              element={
+                <PageTransition>
+                  <OSINT />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/google-dork"
+              element={
+                <PageTransition>
+                  <GoogleDork />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PageTransition>
+                  <Profile />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <PageTransition>
+                  <NotFound />
+                </PageTransition>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

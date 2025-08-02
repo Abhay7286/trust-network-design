@@ -11,6 +11,11 @@ const Navigation = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  /**
+   * The handleLogin and handleSignup functions open the auth modal.
+   * If the user is logged in, we show profile and add tool buttons.
+   * If not, we show login and signup buttons.
+   */
   const handleLogin = () => {
     setAuthMode("login");
     setAuthModalOpen(true);
@@ -32,7 +37,9 @@ const Navigation = () => {
             <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full">
               <Shield className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg">CyberDirectory</span>
+            <span className="font-semibold text-lg">
+              <a href="/">CyberDirectory</a>
+            </span>
           </div>
 
           <nav className="flex items-center space-x-6">

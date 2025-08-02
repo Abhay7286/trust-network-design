@@ -77,7 +77,7 @@ const Submit = () => {
           category: formData.category,
           type: formData.type,
           tags: tags,
-          submitted_by: formData.submitterName || 'Anonymous',
+          submitted_by: formData.submitterName,
           submitter_email: formData.submitterEmail,
           reason_for_submission: formData.reasonForSubmission,
           status: 'pending', // Add a status field for moderation
@@ -91,9 +91,7 @@ const Submit = () => {
       if (error) {
         throw error;
       }
-
       setIsSubmitted(true);
-      
       toast({
         title: "Submission Successful!",
         description: "Your tool has been submitted for review. We'll notify you once it's approved.",
