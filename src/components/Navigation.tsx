@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, User, Plus } from "lucide-react";
+import { Shield, User, Plus, Briefcase } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 
@@ -11,23 +11,17 @@ const Navigation = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  /**
-   * The handleLogin and handleSignup functions open the auth modal.
-   * If the user is logged in, we show profile and add tool buttons.
-   * If not, we show login and signup buttons.
-   */
   const handleLogin = () => {
     setAuthMode("login");
     setAuthModalOpen(true);
   };
-
   const handleSignup = () => {
     setAuthMode("signup");
     setAuthModalOpen(true);
   };
-
   const goToProfile = () => navigate("/profile");
   const goToAddTool = () => navigate("/submit");
+  const goToAdmin = () => navigate("/admin");
 
   return (
     <>
@@ -41,31 +35,52 @@ const Navigation = () => {
               <a href="/">CyberDirectory</a>
             </span>
           </div>
-
           <nav className="flex items-center space-x-6">
-            <a href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <a
+              href="/"
+              className={`text-sm font-medium hover:text-primary transition-colors ${location.pathname === "/" ? "text-black" : "text-muted-foreground"
+                }`}
+            >
               Home
             </a>
-            <a href="/providers" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+
+            <a
+              href="/providers"
+              className={`text-sm font-medium hover:text-primary transition-colors ${
+                location.pathname === "/providers" ? "text-black" : "text-muted-foreground"
+              }`}
+            >
               Find Providers
             </a>
-            <a href="/osint" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <a
+              href="/osint"
+              className={`text-sm font-medium hover:text-primary transition-colors ${
+                location.pathname === "/osint" ? "text-black" : "text-muted-foreground"
+              }`}
+            >
               OSINT
             </a>
-            <a href="/google-dork" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <a
+              href="/google-dork"
+              className={`text-sm font-medium hover:text-primary transition-colors ${
+                location.pathname === "/google-dork" ? "text-black" : "text-muted-foreground"
+              }`}
+            >
               Google Dork
             </a>
-
             {user ? (
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm" onClick={goToAddTool} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Tool
+                  <Plus className="h-4 w-4" /> Add Tool
                 </Button>
                 <Button variant="outline" size="sm" onClick={goToProfile} className="gap-2">
-                  <User className="h-4 w-4" />
-                  Profile
+                  <User className="h-4 w-4" /> Profile
                 </Button>
+                {user.role === "admin" && (
+                  <Button variant="outline" size="sm" onClick={goToAdmin} className="gap-2">
+                    <Briefcase className="h-4 w-4" /> Admin Dashboard
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -80,7 +95,6 @@ const Navigation = () => {
           </nav>
         </div>
       </header>
-
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}

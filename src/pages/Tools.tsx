@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import SearchAndFilters from "@/components/SearchAndFilters";

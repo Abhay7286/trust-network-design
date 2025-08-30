@@ -12,17 +12,75 @@ export interface Tool {
   github_stars: number;
   website: string;
   github?: string;
-  tags: string[];        
-  last_updated: string;    
-  submitted_by: string;   
-  votes: number;          
-  related_tools: string[]; 
+  tags: string[];
+  last_updated: string;
+  submitted_by: string;
+  votes: number;
+  related_tools: string[];
   logo_url?: string;
   created_by: string; // User ID of the creator
   featured: boolean; // Indicates if the tool is featured
   average_rating?: number; // Optional average rating
   total_reviews?: number; // Optional total reviews count
 }
+
+// Add this interface near your other type definitions
+export interface VoteHistory {
+  tool_id: string;
+  tool_name: string;
+  tool_category: string;
+  tool_type: string;
+  vote_type: 'upvote' | 'downvote';
+  created_at: string;
+  comment?: string;
+}
+
+export const fetchVotingHistory = async (userId: string): Promise<VoteHistory[]> => {
+  console.log("[BACKEND DEBUG] Fetching for user:", userId);
+
+  const { data, error } = await supabase
+    .from('tool_votes')
+    .select(`
+      tool_id,
+      vote_type,
+      created_at,
+      comment,
+      tools!tool_votes_tool_id_fkey(name, category, type)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  console.log("[BACKEND DEBUG] Raw response:", { data, error });
+
+  if (error) {
+    console.error('[BACKEND DEBUG] Full error:', {
+      message: error.message,
+      details: error.details,
+      code: error.code
+    });
+    throw error;
+  }
+
+  const processedData = data.map(vote => {
+    console.log("[BACKEND DEBUG] Processing vote:", {
+      id: vote.tool_id,
+      hasTools: !!vote.tools,
+      toolName: vote.tools[0]?.name
+    });
+    return {
+      tool_id: vote.tool_id,
+      tool_name: vote.tools[0]?.name,
+      tool_category: vote.tools[0]?.category,
+      tool_type: vote.tools[0]?.type,
+      vote_type: vote.vote_type,
+      created_at: vote.created_at,
+      comment: vote.comment || undefined
+    };
+  });
+
+  console.log("[BACKEND DEBUG] Final output:", processedData);
+  return processedData;
+};
 
 // Supabase operations
 export const fetchTools = async (): Promise<Tool[]> => {
@@ -159,21 +217,84 @@ export const fetchWishlistedTools = async (userId: string): Promise<string[]> =>
   return data.map(item => item.tool_id);
 };
 
-export const upvoteTool = async (userId: string, toolId: string): Promise<{ error?: Error }> => {
+// Fetch user's voted tools
+export const fetchUserVotes = async (userId: string): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from('tool_votes')
+    .select('tool_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error fetching user votes:', error);
+    return [];
+  }
+
+  return data.map(vote => vote.tool_id);
+};
+
+export const toggleVote = async (
+  userId: string,
+  toolId: string,
+  comment?: string
+): Promise<{ error?: Error; voted?: boolean }> => {
   try {
-    // Just increment the votes count directly
-    const { error } = await supabase
-      .from('tools')
-      .update({ votes: supabase.rpc('increment') })
-      .eq('id', toolId);
+    // Check if user already voted
+    const { data: existingVote, error: fetchError } = await supabase
+      .from('tool_votes')
+      .select()
+      .eq('user_id', userId)
+      .eq('tool_id', toolId)
+      .maybeSingle();
 
-    if (error) throw error;
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw fetchError;
+    }
 
-    return { error: undefined };
+    if (existingVote) {
+      // Undo vote: delete the existing vote
+      const { error: deleteError } = await supabase
+        .from('tool_votes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('tool_id', toolId);
+
+      if (deleteError) throw deleteError;
+
+      // Decrement the tool votes count with RPC
+      const { error: decError } = await supabase
+        .rpc('decrement_votes', { tool_id: toolId });
+
+      if (decError) throw decError;
+
+      return { error: undefined, voted: false };
+    } else {
+      // Cast a new vote
+      const { error: insertError } = await supabase
+        .from('tool_votes')
+        .insert([{
+          user_id: userId,
+          tool_id: toolId,
+          vote_type: 'upvote',
+          comment
+        }]);
+
+      if (insertError) throw insertError;
+
+      // Increment votes count with RPC
+      const { error: incError } = await supabase
+        .rpc('increment_votes', { tool_id: toolId });
+
+      if (incError) throw incError;
+
+      return { error: undefined, voted: true };
+    }
   } catch (error) {
-    console.error('Error in upvoteTool:', error);
-    return { 
-      error: error instanceof Error ? error : new Error('Failed to upvote tool') 
+    console.error('Toggle vote error:', error);
+    return {
+      error: error instanceof Error ? error : new Error('Toggle vote failed')
     };
   }
 };
+
+
+

@@ -1,37 +1,39 @@
+// src/components/ToolAI.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FormattedResponse } from "@/components/ui/FormattedResponse";
-import { 
-  Loader2, 
-  ArrowLeft, 
-  MessageCircle, 
-  ExternalLink, 
+import { supabase } from "@/lib/supabase";
+import {
+  Loader2,
+  ArrowLeft,
+  ExternalLink,
   Send,
   Bot,
   User,
   Sparkles,
   Copy,
-  Check
+  Check,
+  Github,
+  FileText
 } from "lucide-react";
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY as string;
 
 type Tool = {
-  id: string | number;
+  id: string;
   name: string;
   description: string;
   website?: string;
   github?: string;
-  docs?: string;
-  category?: string;
+  documentation?: string;
+  installation?: string;
+  usage?: string;
+  categories: string[];
+  tags: string[];
   type?: string;
-  tags?: string[];
 };
 
 type Message = {
@@ -39,6 +41,18 @@ type Message = {
   content: string;
   timestamp: Date;
 };
+
+// New helper function to detect incomplete AI responses
+function isResponseIncomplete(reply: string) {
+  if (!reply) return true;
+  const lowerReply = reply.toLowerCase();
+  // Detect truncation by typical patterns or missing end marker
+  return (
+    lowerReply.endsWith("...") ||
+    !lowerReply.includes("[end response]") ||
+    lowerReply.trim().length < 50
+  );
+}
 
 const ToolAI: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,58 +66,72 @@ const ToolAI: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch tool data
   useEffect(() => {
     const fetchTool = async () => {
       setLoading(true);
       setError(null);
-      
-      // Mock tool data for demo purposes
-      const mockTool = {
-        id: id || "1",
-        name: "Example Security Tool",
-        description: "A comprehensive security analysis tool for cybersecurity professionals",
-        website: "https://example.com",
-        github: "https://github.com/example/tool",
-        docs: "https://docs.example.com",
-        category: "Security Analysis",
-        type: "CLI Tool",
-        tags: ["security", "analysis", "penetration-testing", "vulnerability-scanning"]
-      };
-      
-      setTool(mockTool);
-      setLoading(false);
+
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from('tools')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (supabaseError) throw supabaseError;
+        if (!data) throw new Error('Tool not found');
+
+        setTool(data as Tool);
+
+        setChat([{
+          role: "assistant",
+          content: `I can help you with **${data.name}** - ${data.description}. Here are some quick links:\n\n` +
+            `${data.github ? `- [GitHub Repository](${data.github})\n` : ''}` +
+            `${data.documentation ? `- [Documentation](${data.documentation})\n` : ''}` +
+            `${data.website ? `- [Official Website](${data.website})\n` : ''}` +
+            `\nWhat would you like to know about this tool?`,
+          timestamp: new Date()
+        }]);
+      } catch (err) {
+        console.error('Error fetching tool:', err);
+        setError(err instanceof Error ? err.message : "Failed to load tool information");
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchTool();
   }, [id]);
 
-  // Scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, aiLoading]);
 
-  // Focus input on mount
   useEffect(() => {
     if (!loading && inputRef.current) {
       inputRef.current.focus();
     }
   }, [loading]);
 
-  // Compose context string for Groq
   const getToolContext = (tool: Tool) => {
-    let context = `Tool Name: ${tool.name}\nDescription: ${tool.description}`;
-    if (tool.category) context += `\nCategory: ${tool.category}`;
-    if (tool.type) context += `\nType: ${tool.type}`;
-    if (tool.website) context += `\nWebsite: ${tool.website}`;
-    if (tool.github) context += `\nGitHub: ${tool.github}`;
-    if (tool.docs) context += `\nDocumentation: ${tool.docs}`;
-    if (tool.tags && tool.tags.length > 0) {
-      context += `\nTags: ${tool.tags.join(", ")}`;
-    }
-    return context;
+    return `
+# Tool Information
+**Name**: ${tool.name}
+**Description**: ${tool.description}
+${tool.type ? `**Type**: ${tool.type}\n` : ''}
+${tool.categories?.length ? `**Categories**: ${tool.categories.join(", ")}\n` : ''}
+${tool.tags?.length ? `**Tags**: ${tool.tags.join(", ")}\n` : ''}
+
+# Resource Links
+${tool.github ? `- GitHub: ${tool.github}\n` : ''}
+${tool.documentation ? `- Documentation: ${tool.documentation}\n` : ''}
+${tool.website ? `- Website: ${tool.website}\n` : ''}
+
+${tool.installation ? `## Installation\n${tool.installation}\n` : ''}
+${tool.usage ? `## Basic Usage\n${tool.usage}\n` : ''}
+`.trim();
   };
 
-  // Copy message to clipboard
   const copyMessage = async (content: string) => {
     try {
       await navigator.clipboard.writeText(content);
@@ -114,11 +142,11 @@ const ToolAI: React.FC = () => {
     }
   };
 
-  // Call Groq API with fetch
   const askAI = async (question: string) => {
     if (!tool) return;
     setAiLoading(true);
     setError(null);
+
     try {
       const context = getToolContext(tool);
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -128,42 +156,91 @@ const ToolAI: React.FC = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: "openai/gpt-oss-120b",
           messages: [
             {
               role: "system",
-              content: `You are Claude, an AI assistant specialized in cybersecurity tools and technologies. Use the following tool information as context to provide detailed, helpful, and accurate answers. Format your responses using proper markdown formatting including:
+              content: `You are an expert cybersecurity tool assistant. Follow these rules:
 
-- Use ## for main sections and ### for subsections
-- Use **bold** for emphasis
-- Use \`inline code\` for technical terms, commands, and file names
-- Use \`\`\`language for code blocks (specify the language like bash, python, etc.)
-- Use bullet points (-) or numbered lists (1.) for organized information
-- Use > for important quotes or callouts
-
-Be conversational but professional. Always provide actionable insights and practical information about the tool.
+1. ALWAYS format links as [display text](full_url)
+2. Responses MUST be complete and fully finished – do NOT truncate, do not end mid-sentence or mid-code block.
+3. Start every answer with a section heading (##)
+4. Provide step-by-step instructions
+5. Include code blocks for commands
+6. Add a conclusion, and always end every answer with: [end response]
 
 Tool Context:
-${context}`,
+${context}`
             },
-            ...chat.map(m => ({ role: m.role, content: m.content })),
+            ...chat.filter(m => m.role === "assistant").slice(-5).map(m => ({
+              role: m.role,
+              content: m.content
+            })),
             {
               role: "user",
               content: question,
             },
           ],
-          max_tokens: 1500,
+          max_tokens: 8000,
           temperature: 0.3,
         }),
       });
-      
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
-      
+
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
       const data = await response.json();
-      const aiReply = data.choices?.[0]?.message?.content || "I apologize, but I couldn't generate a response at this time.";
-      
+      const aiReply = data.choices?.[0]?.message?.content;
+
+      if (isResponseIncomplete(aiReply)) {
+        // Retry asking the model to complete the response
+        for (let retryCount = 0; retryCount < 2; retryCount++) {
+          const followUpResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${GROQ_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "openai/gpt-oss-120b",
+              messages: [
+                {
+                  role: "system",
+                  content: `Continue your previous answer. Remember to provide a complete response and end with: [end response]`,
+                },
+                {
+                  role: "user",
+                  content: "Please finish your previous response.",
+                },
+              ],
+              max_tokens: 2000,
+              temperature: 0.2,
+            }),
+          });
+
+          if (followUpResponse.ok) {
+            const followUpData = await followUpResponse.json();
+            const followUpReply = followUpData.choices?.[0]?.message?.content;
+            if (followUpReply && !isResponseIncomplete(followUpReply)) {
+              setChat(prev => [
+                ...prev,
+                { role: "user", content: question, timestamp: new Date() },
+                { role: "assistant", content: aiReply + "\n\n" + followUpReply, timestamp: new Date() },
+              ]);
+              setAiLoading(false);
+              return;
+            }
+          }
+        }
+        // Fall back if retries fail
+        setChat(prev => [
+          ...prev,
+          { role: "user", content: question, timestamp: new Date() },
+          { role: "assistant", content: "I'm sorry, my response seems incomplete. Please ask again.", timestamp: new Date() },
+        ]);
+        setAiLoading(false);
+        return;
+      }
+
       setChat(prev => [
         ...prev,
         { role: "user", content: question, timestamp: new Date() },
@@ -171,7 +248,7 @@ ${context}`,
       ]);
     } catch (err) {
       console.error('AI Error:', err);
-      setError("Failed to get AI response. Please check your API key and try again.");
+      setError("Failed to get AI response. Please try again.");
     } finally {
       setAiLoading(false);
     }
@@ -193,34 +270,27 @@ ${context}`,
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
-          <p className="text-gray-400">Loading tool information...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     );
   }
 
   if (error || !tool) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-red-400 mb-4 text-lg">⚠️</div>
-          <p className="text-red-400 mb-6">{error || "Tool not found."}</p>
-          <Button asChild className="bg-white hover:bg-gray-200 text-black">
-            <Link to="/tools">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Tools
-            </Link>
-          </Button>
-        </div>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <div className="text-red-400 mb-4">{error || "Tool not found"}</div>
+        <Button asChild className="bg-white hover:bg-gray-200 text-black">
+          <Link to="/tools">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Tools
+          </Link>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
       <div className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -232,23 +302,30 @@ ${context}`,
               </Button>
               <div>
                 <h1 className="text-lg font-semibold text-white">
-                  <Sparkles className="inline h-5 w-5 mr-2 text-white" />
-                  Ask Cyber directory AI about {tool.name}
+                  <Sparkles className="inline h-5 w-5 mr-2" />
+                  {tool.name} AI Assistant
                 </h1>
-                <p className="text-sm text-gray-400">{tool.description}</p>
+                <p className="text-sm text-gray-400 line-clamp-1">{tool.description}</p>
               </div>
             </div>
             <div className="flex gap-2">
-              {tool.website && (
-                <Button asChild size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                  <a href={tool.website} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              )}
               {tool.github && (
                 <Button asChild size="sm" variant="ghost" className="text-gray-400 hover:text-white">
                   <a href={tool.github} target="_blank" rel="noopener noreferrer">
+                    <Github className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+              {tool.documentation && (
+                <Button asChild size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                  <a href={tool.documentation} target="_blank" rel="noopener noreferrer">
+                    <FileText className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+              {tool.website && (
+                <Button asChild size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                  <a href={tool.website} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </Button>
@@ -258,45 +335,9 @@ ${context}`,
         </div>
       </div>
 
-      {/* Chat Container */}
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <ScrollArea className="h-[calc(100vh-200px)]">
           <div className="space-y-6 pb-24">
-            {/* Welcome Message */}
-            {chat.length === 0 && (
-              <div className="text-center py-12">
-                <div className="bg-gray-900 rounded-2xl p-8 max-w-2xl mx-auto border border-gray-800">
-                  <Bot className="h-12 w-12 text-white mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-white mb-2">
-                    Ask me anything about {tool.name}
-                  </h2>
-                  <p className="text-gray-400 mb-6">
-                    I have detailed information about this tool and can help you understand its features, 
-                    use cases, and implementation details.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
-                    <div className="bg-gray-800 rounded-lg p-3 cursor-pointer hover:bg-gray-700 transition-colors"
-                         onClick={() => setInput("What are the main features?")}>
-                      <p className="text-sm text-gray-300">"What are the main features?"</p>
-                    </div>
-                    <div className="bg-gray-800 rounded-lg p-3 cursor-pointer hover:bg-gray-700 transition-colors"
-                         onClick={() => setInput("How do I get started?")}>
-                      <p className="text-sm text-gray-300">"How do I get started?"</p>
-                    </div>
-                    <div className="bg-gray-800 rounded-lg p-3 cursor-pointer hover:bg-gray-700 transition-colors"
-                         onClick={() => setInput("What are the use cases?")}>
-                      <p className="text-sm text-gray-300">"What are the use cases?"</p>
-                    </div>
-                    <div className="bg-gray-800 rounded-lg p-3 cursor-pointer hover:bg-gray-700 transition-colors"
-                         onClick={() => setInput("Compare with alternatives")}>
-                      <p className="text-sm text-gray-300">"Compare with alternatives"</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Chat Messages */}
             {chat.map((msg, idx) => (
               <div key={idx} className={`flex gap-4 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 {msg.role === "assistant" && (
@@ -305,11 +346,10 @@ ${context}`,
                   </div>
                 )}
                 <div className={`max-w-3xl ${msg.role === "user" ? "order-2" : "order-1"}`}>
-                  <div className={`rounded-2xl ${
-                    msg.role === "user" 
-                      ? "bg-white text-black px-6 py-4" 
-                      : "bg-gray-900 border border-gray-800"
-                  }`}>
+                  <div className={`rounded-2xl ${msg.role === "user"
+                    ? "bg-white text-black px-6 py-4"
+                    : "bg-gray-900 border border-gray-800"
+                    }`}>
                     {msg.role === "assistant" ? (
                       <div className="p-6">
                         <FormattedResponse content={msg.content} />
@@ -330,6 +370,17 @@ ${context}`,
                             )}
                           </Button>
                         </div>
+                        {/* Optional retry button if response is incomplete */}
+                        {isResponseIncomplete(msg.content) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => askAI("Please complete your last response")}
+                            className="text-blue-500 hover:text-blue-700 h-6 px-2 mt-2"
+                          >
+                            Complete Response
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
@@ -349,7 +400,6 @@ ${context}`,
               </div>
             ))}
 
-            {/* AI Loading */}
             {aiLoading && (
               <div className="flex gap-4 justify-start">
                 <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center">
@@ -358,7 +408,7 @@ ${context}`,
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl px-6 py-4">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-white" />
-                    <span className="text-gray-400">Cyber directory AI is thinking...</span>
+                    <span className="text-gray-400">Analyzing {tool.name}...</span>
                   </div>
                 </div>
               </div>
@@ -368,7 +418,6 @@ ${context}`,
           </div>
         </ScrollArea>
 
-        {/* Input Area */}
         <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 p-4">
           <div className="container mx-auto max-w-4xl">
             <div className="flex gap-3 items-end">
@@ -378,7 +427,7 @@ ${context}`,
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={`Ask Cyber directory AI about ${tool.name}...`}
+                  placeholder={`Ask about ${tool.name} installation, usage, or features...`}
                   disabled={aiLoading}
                   className="bg-gray-900 border-gray-700 text-white placeholder-gray-500 rounded-2xl px-4 py-3 pr-12 focus:border-white focus:ring-white"
                 />
@@ -404,4 +453,4 @@ ${context}`,
   );
 };
 
-export default ToolAI; 
+export default ToolAI;

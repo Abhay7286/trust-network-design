@@ -20,6 +20,7 @@ const GoogleDorkPlaygroundSection = () => {
   const [dorkQuery, setDorkQuery] = useState("");
   const [isValidQuery, setIsValidQuery] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
 
   const handleQuickDork = (syntax: string) => {
     setDorkQuery(dorkQuery + syntax);
@@ -29,7 +30,7 @@ const GoogleDorkPlaygroundSection = () => {
     if (dorkQuery.trim()) {
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(dorkQuery)}`;
       window.open(searchUrl, '_blank');
-      
+
       // Add to history
       const newHistory = [dorkQuery, ...searchHistory.slice(0, 4)];
       setSearchHistory(newHistory);
@@ -38,6 +39,10 @@ const GoogleDorkPlaygroundSection = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    setCopiedText(text);
+    setTimeout(() => {
+      setCopiedText(null);
+    }, 1500);
   };
 
   const validateQuery = (query: string) => {
@@ -55,7 +60,7 @@ const GoogleDorkPlaygroundSection = () => {
   return (
     <section className="py-20 bg-gradient-to-br from-muted/30 to-background">
       <div className="container mx-auto px-6">
-        <motion.div 
+        <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -84,7 +89,7 @@ const GoogleDorkPlaygroundSection = () => {
                   <Zap className="text-primary" size={28} />
                   <h3 className="text-2xl font-bold text-foreground">Query Builder</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="relative">
                     <Input
@@ -101,7 +106,7 @@ const GoogleDorkPlaygroundSection = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     {quickDorks.map((dork) => (
                       <Button
@@ -115,7 +120,7 @@ const GoogleDorkPlaygroundSection = () => {
                       </Button>
                     ))}
                   </div>
-                  
+
                   <div className="flex gap-3">
                     <Button
                       onClick={handleSearch}
@@ -131,7 +136,11 @@ const GoogleDorkPlaygroundSection = () => {
                       disabled={!dorkQuery.trim()}
                       className="py-6"
                     >
-                      <Copy size={20} />
+                      {copiedText === dorkQuery ? (
+                        <CheckCircle size={20} className="text-green-500" />
+                      ) : (
+                        <Copy size={20} />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -168,7 +177,11 @@ const GoogleDorkPlaygroundSection = () => {
                           copyToClipboard(dork.example);
                         }}
                       >
-                        <Copy size={16} />
+                        {copiedText === dork.example ? (
+                          <CheckCircle size={16} className="text-green-500" />
+                        ) : (
+                          <Copy size={16} />
+                        )}
                       </Button>
                     </div>
                   ))}
@@ -208,7 +221,11 @@ const GoogleDorkPlaygroundSection = () => {
                             size="sm"
                             onClick={() => copyToClipboard(query)}
                           >
-                            <Copy size={16} />
+                            {copiedText === query ? (
+                              <CheckCircle size={16} className="text-green-500" />
+                            ) : (
+                              <Copy size={16} />
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -234,7 +251,7 @@ const GoogleDorkPlaygroundSection = () => {
                   <div>
                     <h4 className="font-semibold text-orange-800 mb-2">Ethical Use Only</h4>
                     <p className="text-orange-700 text-sm">
-                      This playground is for educational purposes. Always ensure you have proper authorization 
+                      This playground is for educational purposes. Always ensure you have proper authorization
                       before using Google Dorks for security research. Respect privacy and legal boundaries.
                     </p>
                   </div>

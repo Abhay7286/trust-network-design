@@ -17,6 +17,8 @@ import GoogleDork from "./pages/GoogleDork";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/context/AuthContext";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import ScrollToTop from "./components/scrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +72,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+         <ScrollToTop />
           <ScrollProgressBar />
           <Routes>
             <Route
@@ -149,6 +152,14 @@ const App = () => (
               element={
                 <PageTransition>
                   <Profile />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <PageTransition>
+                  <Admin />
                 </PageTransition>
               }
             />

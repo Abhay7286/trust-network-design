@@ -1,12 +1,22 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Shield, ExternalLink, Github, Heart, ArrowUp, Calendar } from "lucide-react";
+import { Star, Shield, ExternalLink, Github, Heart, ArrowUp, Calendar, ArrowDown } from "lucide-react";
 import { Link } from "react-router-dom";
-import { fetchTools, toggleWishlist, upvoteTool, fetchWishlistedTools, Tool } from "@/data/tools";
+import { fetchTools, toggleWishlist, toggleVote, fetchWishlistedTools, fetchUserVotes, Tool } from "@/data/tools";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ToolsListProps {
   searchQuery: string;
@@ -24,33 +34,60 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
   const [votedTools, setVotedTools] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [voteModalOpen, setVoteModalOpen] = useState(false);
+  const [currentToolId, setCurrentToolId] = useState<string | null>(null);
+  const [voteComment, setVoteComment] = useState("");
+  const [isSubmittingVote, setIsSubmittingVote] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [toolsData, wishlistData] = await Promise.all([
+        const [toolsData, wishlistData, userVotes] = await Promise.all([
           fetchTools(),
-          user ? fetchWishlistedTools(user.id) : Promise.resolve([])
+          user ? fetchWishlistedTools(user.id) : Promise.resolve([]),
+          user ? fetchUserVotes(user.id) : Promise.resolve([])
         ]);
         setTools(toolsData);
         setWishlistedTools(wishlistData);
+        setVotedTools(userVotes);
       } catch (err) {
-        console.error("Failed to load data:", {
-          error: err,
-          message: err instanceof Error ? err.message : "Unknown error"
-        });
+        console.error("Failed to load data:", err);
         setError(err instanceof Error ? err.message : 'Failed to load tools');
       } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('tool-votes-updates')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'tools' },
+        (payload) => {
+          setTools(prevTools =>
+            prevTools.map(tool =>
+              tool.id === payload.new.id
+                ? { ...tool, votes: payload.new.votes }
+                : tool
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const searchTools = (query: string) => {
-    return tools.filter(tool => 
+    return tools.filter(tool =>
       tool.name.toLowerCase().includes(query.toLowerCase()) ||
       tool.description.toLowerCase().includes(query.toLowerCase()) ||
       (tool.tags && tool.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
@@ -61,12 +98,10 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
 
   let filteredTools = tools;
 
-  if (searchQuery) {
-    filteredTools = searchTools(searchQuery);
-  }
+  if (searchQuery) filteredTools = searchTools(searchQuery);
 
   if (selectedCategory !== "all") {
-    filteredTools = filteredTools.filter(tool => 
+    filteredTools = filteredTools.filter(tool =>
       tool.category && normalizeFilterValue(tool.category) === selectedCategory
     );
   }
@@ -80,39 +115,31 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
 
   const sortedTools = [...filteredTools].sort((a, b) => {
     switch (sortBy) {
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "trust-score":
-        return (b.trust_score || 0) - (a.trust_score || 0);
-      case "popularity":
-        return (b.votes || 0) - (a.votes || 0);
-      case "recent":
-        return new Date(b.last_updated || 0).getTime() - new Date(a.last_updated || 0).getTime();
-      default:
-        return 0;
+      case "name": return a.name.localeCompare(b.name);
+      case "trust-score": return (b.trust_score || 0) - (a.trust_score || 0);
+      case "popularity": return (b.votes || 0) - (a.votes || 0);
+      case "recent": return new Date(b.last_updated || 0).getTime() - new Date(a.last_updated || 0).getTime();
+      default: return 0;
     }
   });
 
   const handleWishlistToggle = async (toolId: string) => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please login to manage your wishlist.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+     if (!user) {
+    toast({
+      title: "Login required",
+      description: "Please login to manage your wishlist.",
+      variant: "destructive",
+    });
+    return;
+  }
     try {
       const isWishlisted = wishlistedTools.includes(toolId);
       await toggleWishlist(user.id, toolId, isWishlisted);
-
       setWishlistedTools(prev =>
         isWishlisted
           ? prev.filter(id => id !== toolId)
           : [...prev, toolId]
       );
-
       toast({
         title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
         description: `Tool has been ${isWishlisted ? "removed from" : "added to"} your wishlist.`,
@@ -123,62 +150,114 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
     }
   };
 
-  const handleUpvote = async (toolId: string) => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please login to vote for tools.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleVoteClick = async (toolId: string) => {
+     if (!user) {
+    toast({
+      title: "Login required",
+      description: "Please login to manage your vote.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-    try {
-      const { error } = await upvoteTool(user.id, toolId);
+    const hasVoted = votedTools.includes(toolId);
 
-      if (error) {
+    if (hasVoted) {
+      // ✅ Remove vote immediately, skip modal
+      try {
+        setTools(prev =>
+          prev.map(tool =>
+            tool.id === toolId
+              ? { ...tool, votes: (tool.votes || 0) - 1 }
+              : tool
+          )
+        );
+        setVotedTools(prev => prev.filter(id => id !== toolId));
+
+        const { error } = await toggleVote(user.id, toolId);
+
+        if (error) {
+          setTools(prev =>
+            prev.map(tool =>
+              tool.id === toolId
+                ? { ...tool, votes: (tool.votes || 0) + 1 }
+                : tool
+            )
+          );
+          setVotedTools(prev => [...prev, toolId]);
+          throw error;
+        }
+
+        toast({ title: "Vote removed" });
+      } catch (error) {
         toast({
-          title: "Vote failed",
-          description: error.message,
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to remove vote",
           variant: "destructive"
         });
-        return;
       }
+    } else {
+      // ✅ New vote → open modal
+      setCurrentToolId(toolId);
+      setVoteComment("");
+      setVoteModalOpen(true);
+    }
+  };
 
-      setTools(prev => prev.map(tool =>
-        tool.id === toolId ? { ...tool, votes: (tool.votes || 0) + 1 } : tool
-      ));
+  const handleVoteSubmit = async () => {
+    if (!currentToolId || !user) return;
+
+    setIsSubmittingVote(true);
+    const toolId = currentToolId;
+    const hasVoted = votedTools.includes(toolId);
+
+    try {
+      setTools(prev =>
+        prev.map(tool =>
+          tool.id === toolId
+            ? { ...tool, votes: (tool.votes || 0) + 1 }
+            : tool
+        )
+      );
+
       setVotedTools(prev => [...prev, toolId]);
 
-      toast({
-        title: "Vote recorded",
-        description: "Your vote has been counted!",
-      });
+      const { error } = await toggleVote(user.id, toolId, voteComment || undefined);
+
+      if (error) {
+        setTools(prev =>
+          prev.map(tool =>
+            tool.id === toolId
+              ? { ...tool, votes: (tool.votes || 0) - 1 }
+              : tool
+          )
+        );
+        setVotedTools(prev => prev.filter(id => id !== toolId));
+        throw error;
+      }
+
+      toast({ title: "Vote recorded" });
+      setVoteModalOpen(false);
     } catch (error) {
-      console.error('Error handling upvote:', error);
       toast({
         title: "Error",
-        description: "Failed to record vote",
+        description: error instanceof Error ? error.message : "Failed to update vote",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmittingVote(false);
     }
   };
 
   const getTypeColor = (type: string) => {
     if (!type) return "bg-gray-100 text-gray-800 border-gray-200";
-    
     switch (type.toLowerCase()) {
-      case "free":
-        return "bg-green-100 text-green-800 border-green-200";
+      case "free": return "bg-green-100 text-green-800 border-green-200";
       case "open source":
-      case "open-source":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "paid":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "freemium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "open-source": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "paid": return "bg-red-100 text-red-800 border-red-200";
+      case "freemium": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -209,9 +288,7 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
       <CardContent className="pt-0">
         <div className="flex flex-wrap gap-1 mb-3">
           {(tool.tags || []).slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
-            </Badge>
+            <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
           ))}
           {tool.tags && tool.tags.length > 3 && (
             <Badge variant="outline" className="text-xs">
@@ -219,7 +296,7 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
             </Badge>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
@@ -233,8 +310,8 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
               </div>
             )}
             <div className="flex items-center space-x-1">
-              <ArrowUp className={`h-4 w-4 ${votedTools.includes(tool.id) ? 'text-primary fill-current' : 'text-gray-400'}`} />
-              <span className="text-sm">{tool.votes || 0}</span>
+              <ArrowUp className={`h-3 w-3 ${votedTools.includes(tool.id) ? 'text-primary fill-current' : 'text-gray-400'}`} />
+              <span className="text-sm">{typeof tool.votes === 'number' ? tool.votes : 0}</span>
             </div>
           </div>
           <div className="flex items-center space-x-1 text-xs text-muted-foreground">
@@ -242,26 +319,28 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
             <span>{tool.last_updated ? new Date(tool.last_updated).toLocaleDateString() : "Unknown"}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex space-x-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => handleWishlistToggle(tool.id)}
-              disabled={!user}
               className={wishlistedTools.includes(tool.id) ? 'text-red-500 border-red-200' : ''}
             >
               <Heart className={`h-3 w-3 ${wishlistedTools.includes(tool.id) ? 'fill-current' : ''}`} />
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => handleUpvote(tool.id)}
-              disabled={!user || votedTools.includes(tool.id)}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleVoteClick(tool.id)}
               className={votedTools.includes(tool.id) ? 'text-primary' : ''}
             >
-              <ArrowUp className={`h-3 w-3 ${votedTools.includes(tool.id) ? 'fill-current' : ''}`} />
+              {votedTools.includes(tool.id) ? (
+                <ArrowDown className="h-3 w-3 fill-current" />
+              ) : (
+                <ArrowUp className="h-3 w-3" />
+              )}
             </Button>
             <Button size="sm" variant="outline" asChild>
               <a href={tool.website} target="_blank" rel="noopener noreferrer">
@@ -293,7 +372,7 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
               <div>
                 <h3 className="font-semibold text-lg">
                   <Link to={`/tools/${tool.id}`} className="hover:text-primary transition-colors">
-                    {tool.name}
+                    {tool.name} 
                   </Link>
                 </h3>
                 <p className="text-muted-foreground text-sm line-clamp-1">
@@ -325,20 +404,18 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => handleWishlistToggle(tool.id)}
-              disabled={!user}
               className={wishlistedTools.includes(tool.id) ? 'text-red-500 border-red-200' : ''}
             >
               <Heart className={`h-3 w-3 ${wishlistedTools.includes(tool.id) ? 'fill-current' : ''}`} />
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => handleUpvote(tool.id)}
-              disabled={!user || votedTools.includes(tool.id)}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleVoteClick(tool.id)}
               className={votedTools.includes(tool.id) ? 'text-primary' : ''}
             >
               <ArrowUp className={`h-3 w-3 ${votedTools.includes(tool.id) ? 'fill-current' : ''}`} />
@@ -398,7 +475,6 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
           {selectedType !== "all" && ` (${selectedType.replace('-', ' ')})`}
         </p>
       </div>
-
       {viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedTools.map((tool) => (
@@ -412,7 +488,6 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
           ))}
         </div>
       )}
-
       {sortedTools.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">No tools found matching your criteria.</p>
@@ -421,6 +496,43 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
           </Button>
         </div>
       )}
+
+      {/* Vote Modal */}
+      <Dialog open={voteModalOpen} onOpenChange={setVoteModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add your vote</DialogTitle>
+            <DialogDescription>
+              Would you like to add a comment with your vote? (Optional)
+            </DialogDescription>
+          </DialogHeader>
+
+          {currentToolId && (
+            <Textarea
+              placeholder="Your comment..."
+              value={voteComment}
+              onChange={(e) => setVoteComment(e.target.value)}
+              className="mt-4"
+            />
+          )}
+
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setVoteModalOpen(false)}
+              disabled={isSubmittingVote}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleVoteSubmit}
+              disabled={isSubmittingVote}
+            >
+              {isSubmittingVote ? "Processing..." : "Submit Vote"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

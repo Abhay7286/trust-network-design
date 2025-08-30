@@ -277,7 +277,7 @@ const handleLikeToggle = async () => {
                       Visit Official Site
                     </a>
                   </Button>
-                  <Button asChild>
+                  <Button className="w-full"asChild>
                     <Link to={`/tools/${tool.id}/ai`}>
                       <MessageCircle className="mr-2 h-4 w-4" />
                       Ask AI
