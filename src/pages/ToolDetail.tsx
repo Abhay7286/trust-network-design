@@ -8,19 +8,9 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Shield, 
-  ExternalLink, 
-  Github, 
-  Heart, 
-  Star, 
-  Calendar, 
-  User,
-  Flag,
-  ArrowLeft,
-  Share2,
-  MessageCircle
-} from "lucide-react";
+import { Shield, ExternalLink, Github, Heart, Star, Calendar, User, Flag, ArrowLeft, Share2, MessageCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const ToolDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,66 +21,122 @@ const ToolDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [votes, setVotes] = useState(0);
 
-useEffect(() => {
-  const fetchTools = async () => {
-    const { data, error } = await supabase.from("tools").select("*");
+  // New state for wishlist
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
-    if (error) {
-      console.error("Error fetching tools:", error);
-      return;
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchTools = async () => {
+      const { data, error } = await supabase.from("tools").select("*");
+      if (error) {
+        console.error("Error fetching tools:", error);
+        return;
+      }
+      const parsePgArray = (str: string | null | undefined) =>
+        str?.startsWith("{") ? str.replace(/^{|}$/g, "").split(",") : [];
+      const fixedTools = data.map((tool) => ({
+        ...tool,
+        tags: Array.isArray(tool.tags) ? tool.tags : parsePgArray(tool.tags),
+      }));
+      const foundTool = fixedTools.find((t) => String(t.id) === String(id));
+      if (foundTool) {
+        setTool(foundTool);
+        setVotes(foundTool.votes || 0);
+        setIsLiked(false);
+        setError(null);
+      } else {
+        setTool(null);
+        setError("Tool not found");
+      }
+      setLoading(false);
+    };
+    fetchTools();
+  }, [id]);
+
+  // Check wishlist status when tool or user changes
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!user || !tool) {
+        setIsWishlisted(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("wishlist")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("tool_id", tool.id)
+        .single();
+      if (error) {
+        setIsWishlisted(false);
+        return;
+      }
+      setIsWishlisted(Boolean(data));
+    };
+    checkWishlistStatus();
+  }, [user, tool]);
+
+  const handleLikeToggle = async () => {
+    if (!tool) return;
+    try {
+      const newLikeStatus = !isLiked;
+      const updatedVotes = newLikeStatus ? votes + 1 : votes - 1;
+      setIsLiked(newLikeStatus);
+      setVotes(updatedVotes);
+      const { error } = await supabase
+        .from("tools")
+        .update({ votes: updatedVotes })
+        .eq("id", tool.id);
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error updating votes:", error);
+      // Revert UI in case of failure
+      setIsLiked((prev) => !prev);
+      setVotes((prev) => prev);
     }
-
-    const parsePgArray = (str: string | null | undefined) =>
-      str?.startsWith("{") ? str.replace(/^{|}$/g, "").split(",") : [];
-
-    const fixedTools = data.map((tool) => ({
-      ...tool,
-      tags: Array.isArray(tool.tags)
-        ? tool.tags
-        : parsePgArray(tool.tags),
-    }));
-
-    const foundTool = fixedTools.find((t) => String(t.id) === String(id));
-    if (foundTool) {
-      setTool(foundTool);
-      setVotes(foundTool.votes || 0);
-      setIsLiked(false); // Optionally, set based on user/session
-      setError(null);
-    } else {
-      setTool(null);
-      setError("Tool not found");
-    }
-    setLoading(false);
   };
 
-  fetchTools();
-}, [id]);
+  // Wishlist toggle handler added
+  const handleWishlistToggle = async () => {
+    if (!user || !tool) {
+      toast({
+        title: "Login required",
+        description: "Please login to add/remove from wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      if (isWishlisted) {
+        // Remove from wishlist
+        const { error } = await supabase
+          .from("wishlist")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("tool_id", tool.id);
+        if (error) throw error;
 
+        setIsWishlisted(false);
+        toast({ title: "Removed from wishlist" });
+      } else {
+        // Add to wishlist
+        const { error } = await supabase
+          .from("wishlist")
+          .insert([{ user_id: user.id, tool_id: tool.id }]);
+        if (error) throw error;
 
-const handleLikeToggle = async () => {
-  if (!tool) return;
-
-  try {
-    const newLikeStatus = !isLiked;
-    const updatedVotes = newLikeStatus ? votes + 1 : votes - 1;
-
-    setIsLiked(newLikeStatus);
-    setVotes(updatedVotes);
-
-    const { error } = await supabase
-      .from("tools")
-      .update({ votes: updatedVotes })
-      .eq("id", tool.id);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error("Error updating votes:", error);
-    // Revert UI in case of failure
-    setIsLiked((prev) => !prev);
-    setVotes((prev) => prev); // or reset to previous value if tracked
-  }
-};
-
+        setIsWishlisted(true);
+        toast({ title: "Added to wishlist" });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Failed to update wishlist",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -145,12 +191,10 @@ const handleLikeToggle = async () => {
           <div className="mb-6">
             <Button variant="outline" asChild>
               <Link to="/tools">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Tools
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tools
               </Link>
             </Button>
           </div>
-
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Card>
@@ -196,7 +240,10 @@ const handleLikeToggle = async () => {
                       <h3 className="font-semibold mb-2">Community Support</h3>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-1">
-                          <Heart className={`h-4 w-4 ${isLiked ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
+                          <Heart
+                            className={`h-4 w-4 ${isLiked ? "text-red-500 fill-current" : "text-gray-400"
+                              }`}
+                          />
                           <span>{votes} votes</span>
                         </div>
                         {tool.github_stars > 0 && (
@@ -208,7 +255,6 @@ const handleLikeToggle = async () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="mb-6">
                     <h3 className="font-semibold mb-2">Tags</h3>
                     <div className="flex flex-wrap gap-2">
@@ -219,7 +265,6 @@ const handleLikeToggle = async () => {
                       ))}
                     </div>
                   </div>
-
                   <div className="grid md:grid-cols-2 gap-6 mb-6">
                     <div>
                       <h3 className="font-semibold mb-2">Last Updated</h3>
@@ -236,25 +281,36 @@ const handleLikeToggle = async () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="flex flex-wrap gap-3">
-                    <Button 
-                      onClick={handleLikeToggle}
-                      variant={isLiked ? "default" : "outline"}
-                      className={isLiked ? 'bg-red-500 hover:bg-red-600' : ''}
+                    <Button
+                      onClick={handleWishlistToggle}
+                      variant={isWishlisted ? "default" : "outline"}
+                      className={isWishlisted ? "bg-red-500 hover:bg-red-600" : ""}
                     >
-                      <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-                      {isLiked ? 'Liked' : 'Like'}
+                      <Heart
+                        className={`mr-2 h-4 w-4 ${isWishlisted ? "fill-current" : ""}`}
+                        aria-label={
+                          isWishlisted ? "Remove from wishlist" : "Add to wishlist"
+                        }
+                      />
+                      {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
                     </Button>
+
                     <Button asChild>
                       <a href={tool.website} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="mr-2 h-4 w-4" />
                         Visit Website
                       </a>
                     </Button>
+
                     {tool.github && (
                       <Button variant="outline" asChild>
-                        <a href={tool.github} target="_blank" rel="noopener noreferrer">
+                        <a
+                          href={tool.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="View on GitHub"
+                        >
                           <Github className="mr-2 h-4 w-4" />
                           View on GitHub
                         </a>
@@ -264,7 +320,6 @@ const handleLikeToggle = async () => {
                 </CardContent>
               </Card>
             </div>
-
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -273,35 +328,34 @@ const handleLikeToggle = async () => {
                 <CardContent className="space-y-3">
                   <Button className="w-full" asChild>
                     <a href={tool.website} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Visit Official Site
+                      <ExternalLink className="mr-2 h-4 w-4" /> Visit Official Site
                     </a>
                   </Button>
-                  <Button className="w-full"asChild>
+                  <Button className="w-full" asChild>
                     <Link to={`/tools/${tool.id}/ai`}>
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Ask AI
+                      <MessageCircle className="mr-2 h-4 w-4" /> Ask AI
                     </Link>
                   </Button>
                   <Button asChild>
-                  {tool.github && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={tool.github} target="_blank" rel="noopener noreferrer">
-                        <Github className="mr-2 h-4 w-4" />
-                        View Source Code
-                      </a>
-                    </Button>
-                  )}
+                    {tool.github && (
+                      <Button variant="outline" className="w-full" asChild>
+                        <a
+                          href={tool.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Github className="mr-2 h-4 w-4" /> View Source Code
+                        </a>
+                      </Button>
+                    )}
                   </Button>
                   <Button variant="outline" className="w-full" asChild>
                     <Link to={`/report?tool=${tool.id}`}>
-                      <Flag className="mr-2 h-4 w-4" />
-                      Report Issue
+                      <Flag className="mr-2 h-4 w-4" /> Report Issue
                     </Link>
                   </Button>
                 </CardContent>
               </Card>
-
               {relatedTools.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -310,10 +364,16 @@ const handleLikeToggle = async () => {
                   <CardContent>
                     <div className="space-y-3">
                       {relatedTools.slice(0, 5).map((relatedTool) => (
-                        <div key={relatedTool.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div
+                          key={relatedTool.id}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                        >
                           <div>
                             <h4 className="font-medium">
-                              <Link to={`/tools/${relatedTool.id}`} className="hover:text-primary">
+                              <Link
+                                to={`/tools/${relatedTool.id}`}
+                                className="hover:text-primary"
+                              >
                                 {relatedTool.name}
                               </Link>
                             </h4>
