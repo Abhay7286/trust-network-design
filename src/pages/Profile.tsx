@@ -326,7 +326,7 @@ const Profile = () => {
         {/* Profile Header Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="grid items-center justify-between sm:grid-none sm:flex">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
                   <AvatarImage className="h-20 w-20 rounded-lg object-cover"
@@ -528,7 +528,7 @@ const Profile = () => {
 
           {/* Right Column - Tabs */}
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full sm:grid-cols-5 grid-cols-3 ">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="wishlist">Wishlist ({wishlistTools.length})</TabsTrigger>
               <TabsTrigger value="tools">My Tools ({userTools.length})</TabsTrigger>
