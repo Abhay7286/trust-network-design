@@ -1,4 +1,4 @@
-import emailjs from "emailjs-com";
+import emailjs from "@emailjs/browser";
 
 // Initialize EmailJS once in your app (somewhere central)
 emailjs.init("Rhv039vD8v6jwRYZZ");
