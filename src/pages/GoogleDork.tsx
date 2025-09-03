@@ -7,14 +7,12 @@ import Footer from "@/components/Footer";
 
 const GoogleDork = () => {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Navigation />
-      <main className="flex-grow w-full px-2 sm:px-4">
-        <GoogleDorkHeroSection />
-        <GoogleDorkPlaygroundSection />
-        <GoogleDorkExamplesSection />
-        <GoogleDorkTipsSection />
-      </main>
+      <GoogleDorkHeroSection />
+      <GoogleDorkPlaygroundSection />
+      <GoogleDorkExamplesSection />
+      <GoogleDorkTipsSection />
       <Footer />
     </div>
   );
