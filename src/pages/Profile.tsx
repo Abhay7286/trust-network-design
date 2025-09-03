@@ -23,7 +23,7 @@ import {
   ArrowUp,
   Github,
   LinkedinIcon,
-} from "lucide-react"; 
+} from "lucide-react";
 import { fetchVotingHistory, VoteHistory, type Tool } from "@/data/tools";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -40,6 +40,7 @@ const Profile = () => {
     organization: "",
     joinDate: "",
     avatarUrl: "",
+    avatarPath: "",
     linkedin: "",
     github: "",
     instagram: "",
@@ -69,7 +70,7 @@ const Profile = () => {
     }
   }, [user]);
 
-  
+
 
   // Fetch user profile including social links and cyberPoints
   const fetchUserProfile = async () => {
@@ -81,10 +82,37 @@ const Profile = () => {
         )
         .eq("id", user.id)
         .single();
+
+      // Handle case when no profile exists yet
+      if (profileError && profileError.code === "PGRST116") {
+        // No profile yet - prompt user to fill data
+        setProfile({
+          fullName: "",
+          email: user.email || "",
+          bio: "",
+          organization: "",
+          joinDate: "",
+          avatarUrl: "",
+          avatarPath: "",
+          linkedin: "",
+          github: "",
+          instagram: "",
+          cyberPoints: 0,
+        });
+        toast({
+          title: "Profile missing",
+          description: "Please fill in your profile data",
+          variant: "default",
+        });
+        return;
+      }
       if (profileError) throw profileError;
 
+      let avatarPath = "";
       let avatarUrl = "";
+
       if (profileData?.avatar_url) {
+        avatarPath = profileData.avatar_url;
         const { data } = supabase.storage
           .from("avatars")
           .getPublicUrl(profileData.avatar_url);
@@ -97,13 +125,13 @@ const Profile = () => {
         bio: profileData.bio || "",
         organization: profileData.organization || "",
         joinDate: profileData.created_at || "",
+        avatarPath: avatarPath,
         avatarUrl: avatarUrl,
         linkedin: profileData.linkedin || "",
         github: profileData.github || "",
         instagram: profileData.instagram || "",
         cyberPoints: profileData.cyber_points || 0,
       });
-      
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({
@@ -113,6 +141,7 @@ const Profile = () => {
       });
     }
   };
+
 
   // Fetch user tools submitted
   const fetchUserTools = async () => {
@@ -195,31 +224,32 @@ const Profile = () => {
     }
   };
 
-
   const handleSave = async () => {
     try {
-      let avatarFilePath = profile.avatarUrl; // This holds a relative path, e.g. 'avatars/xyz.png'
+      // Use existing relative avatar path from profile state
+      let avatarFilePath = profile.avatarPath || null;
 
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}-${uuidv4()}.${fileExt}`;
         const filePath = `avatars/${fileName}`;
 
-        if (profile.avatarUrl && profile.avatarUrl !== filePath) {
-          await supabase.storage.from('avatars').remove([profile.avatarUrl]);
+        // Remove old avatar if it exists and is different from new file path
+        if (profile.avatarPath && profile.avatarPath !== filePath) {
+          await supabase.storage.from('avatars').remove([profile.avatarPath]);
         }
 
-        // Upload the file to Supabase storage bucket 'avatars'
+        // Upload new avatar file
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, avatarFile);
 
         if (uploadError) throw uploadError;
 
-        // Save only the **relative file path** in your profile
         avatarFilePath = filePath;
       }
 
+      // Prepare update, include avatar_url only if avatarFilePath is set
       const updates = {
         full_name: profile.fullName || null,
         email: profile.email || null,
@@ -228,9 +258,12 @@ const Profile = () => {
         linkedin: profile.linkedin || null,
         github: profile.github || null,
         instagram: profile.instagram || null,
-        avatar_url: avatarFilePath || null, // Relative path only saved here
         updated_at: new Date().toISOString(),
       };
+
+      if (avatarFilePath) {
+        updates.avatar_url = avatarFilePath;
+      }
 
       const { error } = await supabase
         .from('profiles')
@@ -248,7 +281,9 @@ const Profile = () => {
       });
 
       setIsEditing(false);
-      await new Promise((resolve) => setTimeout(resolve, 500)); // 500 ms delay
+      setAvatarFile(null);
+      setAvatarPreview("");
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Delay to ensure visible update
       await fetchUserProfile();
 
     } catch (error) {
@@ -261,29 +296,28 @@ const Profile = () => {
     }
   };
 
-
   const usernameRegex = /^[a-zA-Z0-9_.]{3,30}$/;
 
- const onLinkedInChange = (e: { target: { value: any; }; }) => {
-  const val = e.target.value;
-  if (val === "" || /^[a-zA-Z0-9_\.~-]*$/.test(val)) {
-    setProfile({ ...profile, linkedin: val });
-  }
-};
+  const onLinkedInChange = (e: { target: { value: any; }; }) => {
+    const val = e.target.value;
+    if (val === "" || /^[a-zA-Z0-9_\.~-]*$/.test(val)) {
+      setProfile({ ...profile, linkedin: val });
+    }
+  };
 
- const onGithubChange = (e: { target: { value: any; }; }) => {
-  const val = e.target.value;
-  if (val === "" || /^[a-zA-Z0-9_\.~-]*$/.test(val)) {
-    setProfile({ ...profile, github: val });
-  }
-};
+  const onGithubChange = (e: { target: { value: any; }; }) => {
+    const val = e.target.value;
+    if (val === "" || /^[a-zA-Z0-9_\.~-]*$/.test(val)) {
+      setProfile({ ...profile, github: val });
+    }
+  };
 
- const onInstagramChange = (e: { target: { value: any; }; }) => {
-   const val = e.target.value;
-   if (val === "" || /^[a-zA-Z0-9_\.~-]*$/.test(val)) {
-     setProfile({ ...profile, instagram: val });
-   }
- };
+  const onInstagramChange = (e: { target: { value: any; }; }) => {
+    const val = e.target.value;
+    if (val === "" || /^[a-zA-Z0-9_\.~-]*$/.test(val)) {
+      setProfile({ ...profile, instagram: val });
+    }
+  };
 
   // Handle logout
   const handleLogout = async () => {
@@ -329,8 +363,9 @@ const Profile = () => {
             <div className="grid items-center justify-between sm:grid-none sm:flex">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage className="h-20 w-20 rounded-lg object-cover"
+                  <AvatarImage
                     src={avatarPreview || profile.avatarUrl || "/placeholder-avatar.jpg"}
+                    className="h-20 w-20 rounded-lg object-cover"
                   />
                   <AvatarFallback className="text-lg">
                     {profile.fullName
