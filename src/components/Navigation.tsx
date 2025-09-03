@@ -63,16 +63,6 @@ const Navigation = () => {
               Home
             </a>
             <a
-              href="/providers"
-              className={`text-sm font-medium hover:text-primary transition-colors ${
-                location.pathname === "/providers"
-                  ? "text-black"
-                  : "text-muted-foreground"
-              }`}
-            >
-              Find Providers
-            </a>
-            <a
               href="/osint"
               className={`text-sm font-medium hover:text-primary transition-colors ${
                 location.pathname === "/osint"

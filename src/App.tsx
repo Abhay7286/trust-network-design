@@ -11,7 +11,6 @@ import ToolDetail from "./pages/ToolDetail";
 import ToolAI from "./pages/ToolAI";
 import Submit from "./pages/Submit";
 import Report from "./pages/Report";
-import Providers from "./pages/Providers";
 import OSINT from "./pages/OSINT";
 import GoogleDork from "./pages/GoogleDork";
 import NotFound from "./pages/NotFound";
@@ -120,14 +119,6 @@ const App = () => (
               element={
                 <PageTransition>
                   <Report />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/providers"
-              element={
-                <PageTransition>
-                  <Providers />
                 </PageTransition>
               }
             />
