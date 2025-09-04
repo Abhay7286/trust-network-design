@@ -5,10 +5,23 @@ import { Tool } from "@/data/tools";
 import Loader from "@/components/Loader";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import Contributor from "@/components/ContributorToolDetail";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Shield, ExternalLink, Github, Heart, Star, Calendar, User, Flag, ArrowLeft, Share2, MessageCircle } from "lucide-react";
+import {
+  Shield,
+  ExternalLink,
+  Github,
+  Heart,
+  Star,
+  Calendar,
+  User,
+  Flag,
+  ArrowLeft,
+  Share2,
+  MessageCircle
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -20,84 +33,107 @@ const ToolDetail = () => {
   const [relatedTools, setRelatedTools] = useState<Tool[]>([]);
   const [isLiked, setIsLiked] = useState(false);
   const [votes, setVotes] = useState(0);
-
-  // New state for wishlist
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [contributor, setContributor] = useState<any>(null); // State for contributor
 
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Function to fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+
+    return data;
+  };
+
   useEffect(() => {
     const fetchTools = async () => {
-      const { data, error } = await supabase.from("tools").select("*");
-      if (error) {
-        console.error("Error fetching tools:", error);
-        return;
+      try {
+        const { data, error } = await supabase.from("tools").select("*");
+
+        if (error) {
+          console.error("Error fetching tools:", error);
+          setError("Failed to load tool");
+          setLoading(false);
+          return;
+        }
+
+        const parsePgArray = (str: string | null | undefined) =>
+          str?.startsWith("{") ? str.replace(/^{|}$/g, "").split(",") : [];
+
+        const fixedTools = data.map((tool) => ({
+          ...tool,
+          tags: Array.isArray(tool.tags) ? tool.tags : parsePgArray(tool.tags),
+        }));
+
+        const foundTool = fixedTools.find((t) => String(t.id) === String(id));
+
+        if (foundTool) {
+          setTool(foundTool);
+          setVotes(foundTool.votes || 0);
+
+          // Fetch contributor data if submitted_by exists
+          if (foundTool.submitted_by) {
+            const profile = await fetchUserProfile(foundTool.submitted_by);
+            setContributor(profile);
+          }
+
+          // Find related tools (same category)
+          const related = fixedTools
+            .filter(t => t.category === foundTool.category && t.id !== foundTool.id)
+            .slice(0, 5);
+          setRelatedTools(related);
+
+          setError(null);
+        } else {
+          setTool(null);
+          setError("Tool not found");
+        }
+      } catch (error) {
+        console.error("Error in fetchTools:", error);
+        setError("Failed to load tool");
+      } finally {
+        setLoading(false);
       }
-      const parsePgArray = (str: string | null | undefined) =>
-        str?.startsWith("{") ? str.replace(/^{|}$/g, "").split(",") : [];
-      const fixedTools = data.map((tool) => ({
-        ...tool,
-        tags: Array.isArray(tool.tags) ? tool.tags : parsePgArray(tool.tags),
-      }));
-      const foundTool = fixedTools.find((t) => String(t.id) === String(id));
-      if (foundTool) {
-        setTool(foundTool);
-        setVotes(foundTool.votes || 0);
-        setIsLiked(false);
-        setError(null);
-      } else {
-        setTool(null);
-        setError("Tool not found");
-      }
-      setLoading(false);
     };
+
     fetchTools();
   }, [id]);
 
-  // Check wishlist status when tool or user changes
   useEffect(() => {
     const checkWishlistStatus = async () => {
       if (!user || !tool) {
         setIsWishlisted(false);
         return;
       }
+
       const { data, error } = await supabase
         .from("wishlist")
         .select("*")
         .eq("user_id", user.id)
         .eq("tool_id", tool.id)
         .single();
+
       if (error) {
         setIsWishlisted(false);
         return;
       }
+
       setIsWishlisted(Boolean(data));
     };
+
     checkWishlistStatus();
   }, [user, tool]);
 
-  const handleLikeToggle = async () => {
-    if (!tool) return;
-    try {
-      const newLikeStatus = !isLiked;
-      const updatedVotes = newLikeStatus ? votes + 1 : votes - 1;
-      setIsLiked(newLikeStatus);
-      setVotes(updatedVotes);
-      const { error } = await supabase
-        .from("tools")
-        .update({ votes: updatedVotes })
-        .eq("id", tool.id);
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error updating votes:", error);
-      // Revert UI in case of failure
-      setIsLiked((prev) => !prev);
-      setVotes((prev) => prev);
-    }
-  };
-
-  // Wishlist toggle handler added
   const handleWishlistToggle = async () => {
     if (!user || !tool) {
       toast({
@@ -107,6 +143,7 @@ const ToolDetail = () => {
       });
       return;
     }
+
     try {
       if (isWishlisted) {
         // Remove from wishlist
@@ -115,8 +152,8 @@ const ToolDetail = () => {
           .delete()
           .eq("user_id", user.id)
           .eq("tool_id", tool.id);
-        if (error) throw error;
 
+        if (error) throw error;
         setIsWishlisted(false);
         toast({ title: "Removed from wishlist" });
       } else {
@@ -124,8 +161,8 @@ const ToolDetail = () => {
         const { error } = await supabase
           .from("wishlist")
           .insert([{ user_id: user.id, tool_id: tool.id }]);
-        if (error) throw error;
 
+        if (error) throw error;
         setIsWishlisted(true);
         toast({ title: "Added to wishlist" });
       }
@@ -135,6 +172,38 @@ const ToolDetail = () => {
         description: (error as Error).message || "Failed to update wishlist",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleShare = async () => {
+    if (!tool) return;
+
+    const shareData = {
+      title: tool.name,
+      text: tool.description,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback for browsers that don't support the Web Share API
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied!",
+          description: "Tool link has been copied to clipboard.",
+        });
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        // Fallback if sharing fails
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied!",
+          description: "Tool link has been copied to clipboard.",
+        });
+      }
     }
   };
 
@@ -151,6 +220,23 @@ const ToolDetail = () => {
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
+  };
+
+  // Default values for tool properties
+  const safeTool = {
+    ...tool,
+    name: tool?.name || "Unnamed Tool",
+    description: tool?.description || "No description available.",
+    category: tool?.category || "Uncategorized",
+    type: tool?.type || "Unknown",
+    trust_score: tool?.trust_score || 0,
+    github_stars: tool?.github_stars || 0,
+    tags: tool?.tags || [],
+    last_updated: tool?.last_updated || new Date().toISOString(),
+    submitted_by: tool?.submitted_by || "Unknown",
+    votes: tool?.votes || 0,
+    website: tool?.website || "#",
+    github: tool?.github || null
   };
 
   if (loading) {
@@ -191,35 +277,37 @@ const ToolDetail = () => {
           <div className="mb-6">
             <Button variant="outline" asChild>
               <Link to="/tools">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Tools
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Tools
               </Link>
             </Button>
           </div>
+
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              <Card>
+              <Card className="mb-6">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-3xl mb-2">{tool.name}</CardTitle>
+                      <CardTitle className="text-3xl mb-2">{safeTool.name}</CardTitle>
                       <p className="text-muted-foreground text-lg mb-4">
-                        {tool.description}
+                        {safeTool.description}
                       </p>
                       <div className="flex items-center space-x-4 mb-4">
                         <Badge variant="secondary" className="text-sm">
-                          {tool.category}
+                          {safeTool.category}
                         </Badge>
-                        <Badge variant="outline" className={`text-sm ${getTypeColor(tool.type)}`}>
-                          {tool.type}
+                        <Badge variant="outline" className={`text-sm ${getTypeColor(safeTool.type)}`}>
+                          {safeTool.type}
                         </Badge>
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={handleShare}>
                         <Share2 className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="sm" asChild>
-                        <Link to={`/report?tool=${tool.id}`}>
+                        <Link to={`/report?tool=${safeTool.id}`}>
                           <Flag className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -232,7 +320,7 @@ const ToolDetail = () => {
                       <h3 className="font-semibold mb-2">Trust Score</h3>
                       <div className="flex items-center space-x-2">
                         <Shield className="h-5 w-5 text-primary" />
-                        <span className="text-xl font-bold">{tool.trust_score}</span>
+                        <span className="text-xl font-bold">{safeTool.trust_score}</span>
                         <span className="text-muted-foreground">out of 5</span>
                       </div>
                     </div>
@@ -244,12 +332,12 @@ const ToolDetail = () => {
                             className={`h-4 w-4 ${isLiked ? "text-red-500 fill-current" : "text-gray-400"
                               }`}
                           />
-                          <span>{votes} votes</span>
+                          <span>{safeTool.votes} votes</span>
                         </div>
-                        {tool.github_stars > 0 && (
+                        {safeTool.github_stars > 0 && (
                           <div className="flex items-center space-x-1">
                             <Star className="h-4 w-4 text-yellow-500" />
-                            <span>{tool.github_stars.toLocaleString()} stars</span>
+                            <span>{safeTool.github_stars.toLocaleString()} stars</span>
                           </div>
                         )}
                       </div>
@@ -258,11 +346,15 @@ const ToolDetail = () => {
                   <div className="mb-6">
                     <h3 className="font-semibold mb-2">Tags</h3>
                     <div className="flex flex-wrap gap-2">
-                      {tool.tags.map((tag) => (
-                        <Badge key={tag} variant="outline">
-                          {tag}
-                        </Badge>
-                      ))}
+                      {safeTool.tags.length > 0 ? (
+                        safeTool.tags.map((tag) => (
+                          <Badge key={tag} variant="outline">
+                            {tag}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No tags available</span>
+                      )}
                     </div>
                   </div>
                   <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -270,14 +362,7 @@ const ToolDetail = () => {
                       <h3 className="font-semibold mb-2">Last Updated</h3>
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(tool.last_updated).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-2">Submitted By</h3>
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="capitalize">{tool.submitted_by}</span>
+                        <span>{new Date(safeTool.last_updated).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -289,24 +374,20 @@ const ToolDetail = () => {
                     >
                       <Heart
                         className={`mr-2 h-4 w-4 ${isWishlisted ? "fill-current" : ""}`}
-                        aria-label={
-                          isWishlisted ? "Remove from wishlist" : "Add to wishlist"
-                        }
+                        aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
                       />
                       {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
                     </Button>
-
                     <Button asChild>
-                      <a href={tool.website} target="_blank" rel="noopener noreferrer">
+                      <a href={safeTool.website} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="mr-2 h-4 w-4" />
                         Visit Website
                       </a>
                     </Button>
-
-                    {tool.github && (
+                    {safeTool.github && (
                       <Button variant="outline" asChild>
                         <a
-                          href={tool.github}
+                          href={safeTool.github}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label="View on GitHub"
@@ -319,7 +400,19 @@ const ToolDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Contributor Section */}
+              {contributor && (
+                <Contributor
+                  name={contributor.full_name || contributor.username || 'Anonymous User'}
+                  bio={contributor.bio}
+                  role={contributor.email}
+                  organization={contributor.organization}
+                  avatarUrl={contributor.avatar_url}
+                />
+              )}
             </div>
+
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -327,35 +420,34 @@ const ToolDetail = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button className="w-full" asChild>
-                    <a href={tool.website} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-2 h-4 w-4" /> Visit Official Site
+                    <a href={safeTool.website} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Visit Official Site
                     </a>
                   </Button>
                   <Button className="w-full" asChild>
-                    <Link to={`/tools/${tool.id}/ai`}>
-                      <MessageCircle className="mr-2 h-4 w-4" /> Ask AI
+                    <Link to={`/tools/${safeTool.id}/ai`}>
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Ask AI
                     </Link>
                   </Button>
-                  <Button asChild>
-                    {tool.github && (
-                      <Button variant="outline" className="w-full" asChild>
-                        <a
-                          href={tool.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Github className="mr-2 h-4 w-4" /> View Source Code
-                        </a>
-                      </Button>
-                    )}
-                  </Button>
+                  {safeTool.github && (
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href={safeTool.github} target="_blank" rel="noopener noreferrer">
+                        <Github className="mr-2 h-4 w-4" />
+                        View Source Code
+                      </a>
+                    </Button>
+                  )}
                   <Button variant="outline" className="w-full" asChild>
-                    <Link to={`/report?tool=${tool.id}`}>
-                      <Flag className="mr-2 h-4 w-4" /> Report Issue
+                    <Link to={`/report?tool=${safeTool.id}`}>
+                      <Flag className="mr-2 h-4 w-4" />
+                      Report Issue
                     </Link>
                   </Button>
                 </CardContent>
               </Card>
+
               {relatedTools.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -363,7 +455,7 @@ const ToolDetail = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {relatedTools.slice(0, 5).map((relatedTool) => (
+                      {relatedTools.map((relatedTool) => (
                         <div
                           key={relatedTool.id}
                           className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
@@ -383,7 +475,7 @@ const ToolDetail = () => {
                           </div>
                           <div className="flex items-center space-x-1">
                             <Shield className="h-3 w-3 text-primary" />
-                            <span className="text-sm">{relatedTool.trust_score}</span>
+                            <span className="text-sm">{relatedTool.trust_score || 0}</span>
                           </div>
                         </div>
                       ))}
