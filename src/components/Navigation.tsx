@@ -159,17 +159,6 @@ const Navigation = () => {
                 Home
               </a>
               <a
-                href="/providers"
-                className={`block text-base font-medium hover:text-primary transition-colors ${
-                  location.pathname === "/providers"
-                    ? "text-black"
-                    : "text-muted-foreground"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Find Providers
-              </a>
-              <a
                 href="/osint"
                 className={`block text-base font-medium hover:text-primary transition-colors ${
                   location.pathname === "/osint"
