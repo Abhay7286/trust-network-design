@@ -23,6 +23,7 @@ import {
   ArrowUp,
   Github,
   LinkedinIcon,
+  ArrowLeft,
 } from "lucide-react";
 import { fetchVotingHistory, VoteHistory, type Tool } from "@/data/tools";
 import { useAuth } from "@/context/AuthContext";
@@ -358,6 +359,13 @@ const Profile = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Header Card */}
+         <button
+        className="flex items-center px-4 py-2 rounded-lg border text-base font-medium bg-white text-black hover:bg-gray-100"
+        onClick={() => navigate(-1)}
+      >
+        <ArrowLeft className="h-5 w-5 mr-2" />
+        Back to Home
+      </button>
         <Card>
           <CardHeader>
             <div className="grid items-center justify-between sm:grid-none sm:flex">
