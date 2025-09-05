@@ -385,14 +385,6 @@ const ToolDetail = () => {
                       </span>
                     </a>
                   </Button>
-                  <Button className="w-full" asChild>
-                    <button onClick={handleAskAI} style={{ width: '100%', background: 'none', border: 'none', padding: 0 }}>
-                      <span className="flex items-center">
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Ask AI
-                      </span>
-                    </button>
-                  </Button>
                   {safeTool.github && (
                     <Button variant="outline" className="w-full" asChild>
                       <a href={safeTool.github} target="_blank" rel="noopener noreferrer">

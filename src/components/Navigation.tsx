@@ -41,7 +41,7 @@ const Navigation = () => {
 
   return (
     <>
-      <header className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-1">
         <div className="container flex h-14 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full">

@@ -69,7 +69,7 @@ const SearchAndFilters = ({
   const hasActiveFilters = searchQuery || selectedCategory !== "all" || selectedType !== "all";
 
   return (
-    <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b sticky top-16 z-10">
+    <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b z-10">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col lg:flex-row gap-4 items-center">
           {/* Search Bar */}
