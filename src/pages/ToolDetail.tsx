@@ -269,6 +269,14 @@ const ToolDetail = () => {
     );
   }
 
+  function handleAskAI(event: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
+    event.preventDefault();
+    toast({
+      title: "Feature Coming Soon",
+      description: "The 'Ask AI' feature is under development and will be available soon.",
+    });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -425,11 +433,9 @@ const ToolDetail = () => {
                       Visit Official Site
                     </a>
                   </Button>
-                  <Button className="w-full" asChild>
-                    <Link to={`/tools/${safeTool.id}/ai`}>
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      Ask AI
-                    </Link>
+                  <Button className="w-full" asChild onClick={handleAskAI}>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Ask AI
                   </Button>
                   {safeTool.github && (
                     <Button variant="outline" className="w-full" asChild>
