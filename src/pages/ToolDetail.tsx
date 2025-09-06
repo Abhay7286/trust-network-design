@@ -27,18 +27,31 @@ const ToolDetail = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string | undefined | null) => {
+    if (!userId) {
+      console.error("Invalid userId provided for profile fetch");
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();  // Allows 0 or 1 row, no error if none found
+
     if (error) {
       console.error('Error fetching user profile:', error);
       return null;
     }
+
+    if (!data) {
+      console.warn(`No profile found for userId: ${userId}`);
+      return null;
+    }
+
     return data;
   };
+
 
   useEffect(() => {
     const fetchTools = async () => {
