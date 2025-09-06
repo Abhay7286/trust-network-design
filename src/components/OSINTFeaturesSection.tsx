@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search, Shield, Eye, Database, Network, Globe, Users, Target } from "lucide-react";
+import { Search, Shield, Eye, Database, Network, Globe, Users, Target, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -62,7 +62,7 @@ const OSINTFeaturesSection = () => {
   return (
     <section className="py-20 bg-gradient-to-br from-muted/30 to-background">
       <div className="container mx-auto px-6">
-        <motion.div 
+        <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -91,7 +91,7 @@ const OSINTFeaturesSection = () => {
               <Card className={`h-full cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 border-2 hover:border-primary/20 ${feature.bgColor}`}>
                 <CardContent className="p-8">
                   <div className="flex items-start gap-4 mb-6">
-                    <motion.div 
+                    <motion.div
                       className={`p-4 rounded-2xl bg-gradient-to-br ${feature.color} shadow-lg`}
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       transition={{ duration: 0.3 }}
@@ -104,21 +104,21 @@ const OSINTFeaturesSection = () => {
                       </h3>
                     </div>
                   </div>
-                  
+
                   <p className="text-muted-foreground leading-relaxed mb-6">
                     {feature.description}
                   </p>
 
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ 
+                    animate={{
                       opacity: hoveredFeature === index ? 1 : 0,
                       height: hoveredFeature === index ? "auto" : 0
                     }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className={`w-full border-2 ${feature.textColor} hover:bg-gradient-to-r ${feature.color} hover:text-white transition-all duration-300`}
                     >
                       Learn More
@@ -130,28 +130,40 @@ const OSINTFeaturesSection = () => {
           ))}
         </div>
 
-        <motion.div 
+        <motion.div
           className="text-center mt-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Users className="text-primary" size={32} />
-              <Target className="text-secondary" size={32} />
+          <div className="bg-gradient-to-r from-black to-gray-950 rounded-2xl p-8 max-w-4xl mx-auto text-white">
+            <div className="flex items-center justify-center gap-6 mb-6">
+              <Users className="text-white" size={32} />
+              <Target className="text-gray-400" size={32} />
             </div>
-            <h3 className="text-2xl font-bold text-foreground mb-4">
-              Join the OSINT Community
+            <h3 className="text-2xl font-bold mb-4 flex items-center justify-center space-x-3">
+              <span>Join Our OSINT Community on WhatsApp</span>
             </h3>
-            <p className="text-muted-foreground mb-6">
-              Connect with professionals, share techniques, and stay updated on the latest OSINT methodologies
+            <p className="text-gray-300 mb-8 text-center max-w-xl mx-auto">
+              Connect with professionals, share techniques, and stay updated on the latest OSINT methodologies.
             </p>
-            <Button className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white px-8 py-3 text-lg font-semibold rounded-lg">
-              Join Community
-            </Button>
+            <div className="flex justify-center">
+              <Button className="bg-gradient-to-r from-white to-gray-300 text-black px-8 py-3 text-lg font-semibold rounded-lg shadow-md hover:from-gray-300 hover:to-white transition-colors duration-300">
+                <a
+                  href="https://chat.whatsapp.com/JNAaD8vRyVQFem7Tt7lx5N"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-gray-400 flex items-center space-x-2 transition-colors duration-200"
+                  aria-label="Join WhatsApp Community"
+                >
+                  <MessageCircle className="h-6 w-6" style={{ filter: "invert(1)" }} />
+                  <span className="text-black">Join Now</span>
+                </a>
+              </Button>
+            </div>
           </div>
+
         </motion.div>
       </div>
     </section>
