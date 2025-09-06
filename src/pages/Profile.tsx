@@ -251,7 +251,17 @@ const Profile = () => {
       }
 
       // Prepare update, include avatar_url only if avatarFilePath is set
-      const updates = {
+      const updates: {
+        full_name: string | null;
+        email: string | null;
+        bio: string | null;
+        organization: string | null;
+        linkedin: string | null;
+        github: string | null;
+        instagram: string | null;
+        updated_at: string;
+        avatar_url?: string;
+      } = {
         full_name: profile.fullName || null,
         email: profile.email || null,
         bio: profile.bio || null,

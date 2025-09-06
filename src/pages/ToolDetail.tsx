@@ -74,7 +74,9 @@ const ToolDetail = () => {
           setTool(foundTool);
           setVotes(foundTool.votes || 0);
           if (foundTool.submitted_by) {
+            console.log("Fetching contributor profile for user ID:", foundTool.submitted_by);
             const profile = await fetchUserProfile(foundTool.submitted_by);
+            console.log("Fetched contributor profile:", profile);
             setContributor(profile);
           }
           const related = fixedTools
@@ -373,7 +375,7 @@ const ToolDetail = () => {
                 </CardContent>
               </Card>
 
-              {contributor && (
+              {contributor ? (
                 <Contributor
                   name={contributor.full_name || contributor.username || 'Anonymous User'}
                   bio={contributor.bio}
@@ -381,7 +383,10 @@ const ToolDetail = () => {
                   organization={contributor.organization}
                   avatarUrl={contributor.avatar_url}
                 />
+              ) : (
+                <p className="text-muted-foreground justify-center align-center text-black">Contributor information not available.</p>
               )}
+
             </div>
 
             <div className="space-y-6">
