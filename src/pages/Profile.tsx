@@ -581,7 +581,7 @@ const Profile = () => {
 
           {/* Right Column - Tabs */}
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols- sm:grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
               <TabsTrigger value="profile" className="text-xs sm:text-sm p-2">
                 Profile
               </TabsTrigger>
