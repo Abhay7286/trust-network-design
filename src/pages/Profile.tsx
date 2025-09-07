@@ -581,15 +581,15 @@ const Profile = () => {
 
           {/* Right Column - Tabs */}
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols- sm:grid-cols-5 h-auto">
               <TabsTrigger value="profile" className="text-xs sm:text-sm p-2">
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="wishlist" className="text-xs sm:text-sm p-2">
+              <TabsTrigger value="wishlist" className="text-xs sm:text-sm p-3">
                 <span className="hidden sm:inline">Wishlist ({wishlistTools.length})</span>
                 <span className="sm:hidden">List ({wishlistTools.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="tools" className="text-xs sm:text-sm p-2">
+              <TabsTrigger value="tools" className="text-xs sm:text-sm p-3">
                 <span className="hidden sm:inline">My Tools ({userTools.length})</span>
                 <span className="sm:hidden">Tools ({userTools.length})</span>
               </TabsTrigger>
