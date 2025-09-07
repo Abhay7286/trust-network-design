@@ -369,13 +369,13 @@ const Profile = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Header Card */}
-         <button
-        className="flex items-center px-4 py-2 rounded-lg border text-base font-medium bg-white text-black hover:bg-gray-100"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="h-5 w-5 mr-2" />
-        Back to Home
-      </button>
+        <button
+          className="flex items-center px-4 py-2 rounded-lg border text-base font-medium bg-white text-black hover:bg-gray-100"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          Back to Home
+        </button>
         <Card>
           <CardHeader>
             <div className="grid items-center justify-between sm:grid-none sm:flex">
@@ -581,12 +581,24 @@ const Profile = () => {
 
           {/* Right Column - Tabs */}
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full sm:grid-cols-5 grid-cols-3 ">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="wishlist">Wishlist ({wishlistTools.length})</TabsTrigger>
-              <TabsTrigger value="tools">My Tools ({userTools.length})</TabsTrigger>
-              <TabsTrigger value="stats">Statistics</TabsTrigger>
-              <TabsTrigger value="votes">Votes ({votingHistory.length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+              <TabsTrigger value="profile" className="text-xs sm:text-sm p-2">
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="wishlist" className="text-xs sm:text-sm p-2">
+                <span className="hidden sm:inline">Wishlist ({wishlistTools.length})</span>
+                <span className="sm:hidden">List ({wishlistTools.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="text-xs sm:text-sm p-2">
+                <span className="hidden sm:inline">My Tools ({userTools.length})</span>
+                <span className="sm:hidden">Tools ({userTools.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="text-xs sm:text-sm p-2">
+                Stats
+              </TabsTrigger>
+              <TabsTrigger value="votes" className="text-xs sm:text-sm p-2">
+                Votes
+              </TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
