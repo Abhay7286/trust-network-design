@@ -1,299 +1,312 @@
-// src/data/tools.ts
+import { useState } from "react";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X, Plus, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import AddResourceForm from "@/components/AddResource";
 
-export interface Tool {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  created_at: string;
-  type: "Free" | "Open Source" | "Paid" | "Freemium";
-  trust_score: number;
-  github_stars: number;
-  website: string;
-  github?: string;
-  tags: string[];
-  last_updated: string;
-  submitted_by: string; // User ID of the creator
-  votes: number;
-  related_tools: string[];
-  logo_url?: string;
-  featured: boolean; // Indicates if the tool is featured
-  average_rating?: number; // Optional average rating
-  total_reviews?: number; // Optional total reviews count
-}
-
-// Add this interface near your other type definitions
-export interface VoteHistory {
-  tool_id: string;
-  tool_name: string;
-  tool_category: string;
-  tool_type: string;
-  vote_type: 'upvote' | 'downvote';
-  created_at: string;
-  comment?: string;
-}
-
-export const fetchVotingHistory = async (userId: string): Promise<VoteHistory[]> => {
-  console.log("[BACKEND DEBUG] Fetching for user:", userId);
-
-  const { data, error } = await supabase
-    .from('tool_votes')
-    .select(`
-      tool_id,
-      vote_type,
-      created_at,
-      comment,
-      tools!tool_votes_tool_id_fkey(name, category, type)
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  console.log("[BACKEND DEBUG] Raw response:", { data, error });
-
-  if (error) {
-    console.error('[BACKEND DEBUG] Full error:', {
-      message: error.message,
-      details: error.details,
-      code: error.code
-    });
-    throw error;
-  }
-
-  const processedData = data.map(vote => {
-    console.log("[BACKEND DEBUG] Processing vote:", {
-      id: vote.tool_id,
-      hasTools: !!vote.tools,
-      toolName: vote.tools[0]?.name
-    });
-    return {
-      tool_id: vote.tool_id,
-      tool_name: vote.tools[0]?.name,
-      tool_category: vote.tools[0]?.category,
-      tool_type: vote.tools[0]?.type,
-      vote_type: vote.vote_type,
-      created_at: vote.created_at,
-      comment: vote.comment || undefined
-    };
+const Submit = () => {
+  const { toast } = useToast();
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    website: "",
+    github: "",
+    category: "",
+    type: "",
+    submitterName: "",
+    submitterEmail: "",
+    reasonForSubmission: ""
   });
 
-  console.log("[BACKEND DEBUG] Final output:", processedData);
-  return processedData;
-};
+  const [newToolId, setNewToolId] = useState<string | null>(null);
+  const [showAddResources, setShowAddResources] = useState(false);
 
-// Supabase operations
-export const fetchTools = async (): Promise<Tool[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('tools')
-      .select(`
-        id,
-        name,
-        description,
-        category,
-        type,
-        trust_score,
-        github_stars,
-        website,
-        github,
-        tags,
-        last_updated,
-        submitted_by,
-        votes,
-        related_tools,
-        logo_url,
-        featured,
-        average_rating,
-        total_reviews,
-        created_at
-      `)
-      .eq('status', 'approved') 
-      .order('trust_score', { ascending: false });
+  const categories = [
+    "OSINT", "Red Teaming", "SOC Tools", "Threat Intelligence",
+    "Scanners", "Malware Analysis", "Forensics", "Cryptography",
+    "Network Security", "Penetration Testing"
+  ];
 
-    if (error) {
-      console.error('Error fetching tools:', error);
-      throw error;
+  const types = ["Free", "Open Source", "Paid", "Freemium"];
+
+  const addTag = () => {
+    if (currentTag.trim() && !tags.includes(currentTag.trim())) {
+      setTags([...tags, currentTag.trim()]);
+      setCurrentTag("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
+  // Step 1: Submit tool data and get back tool id
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setIsSubmitting(true);
+
+    // Basic validation
+    if (!formData.name || !formData.description || !formData.category || !formData.type || !formData.submitterEmail) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
     }
 
-    if (!data) {
-      console.warn('No data returned from tools table');
-      return [];
+    try {
+      // Get current user info from Supabase Auth
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error("You must be signed in to submit a tool.");
+      }
+
+      // Prepare tool data payload
+      const insertData = {
+        name: formData.name,
+        description: formData.description,
+        website: formData.website,
+        github: formData.github,
+        category: formData.category,
+        type: formData.type,
+        tags: tags,
+        submitted_by: user.id,
+        submitter_name: formData.submitterName,
+        submitter_email: formData.submitterEmail,
+        reason_for_submission: formData.reasonForSubmission,
+        status: "pending"
+      };
+
+      // Insert tool and select returned id
+      const { data, error } = await supabase
+        .from("tools")
+        .insert([insertData])
+        .select("id");
+
+      if (error) throw error;
+      if (!data || data.length === 0 || !data[0].id) {
+        throw new Error("Tool creation failed. No ID returned.");
+      }
+
+      // Store newly created tool id in state
+      setNewToolId(data[0].id);
+
+      // Show resources step
+      setShowAddResources(true);
+
+    } catch (err: any) {
+      toast({
+        title: "Submission Failed",
+        description: err.message || "Unexpected error occurred.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    // Transform data to match the Tool interface
-    const transformedData = data.map(tool => ({
-      ...tool,
-      // Ensure arrays are properly initialized
-      tags: tool.tags || [],
-      relatedTools: tool.related_tools || [],
-      // Ensure optional fields are properly handled
-      github: tool.github || undefined,
-      logoUrl: tool.logo_url || undefined,
-      averageRating: tool.average_rating || undefined,
-      totalReviews: tool.total_reviews || undefined
-    }));
+  // After resources added or skipped, show success notification
+  const handleResourcesSuccess = () => {
+    setShowAddResources(false);
+    setIsSubmitted(true);
+  };
 
-    return transformedData as Tool[];
-  } catch (error) {
-    console.error('Failed to fetch tools:', error);
-    throw error;
+  if (showAddResources && newToolId) {
+    // Step 2: Add resources UI
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-20 pb-12 container mx-auto px-4 max-w-2xl">
+          <h2 className="text-2xl font-semibold mb-4">Add Resources (Optional)</h2>
+          <p className="text-muted-foreground mb-6">
+            Your tool has been submitted successfully! Now you can add resources related to your tool.
+            You can skip this step and add resources later.
+          </p>
+          <AddResourceForm toolId={newToolId} onSuccess={handleResourcesSuccess} />
+          <Button
+            variant="outline"
+            className="mt-6"
+            onClick={handleResourcesSuccess}
+          >
+            Skip Adding Resources
+          </Button>
+        </div>
+        <Footer />
+      </div>
+    );
   }
+
+  if (isSubmitted) {
+    // Step 3: Show success message
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-20 pb-12 container mx-auto px-4 max-w-2xl text-center">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
+          <h1 className="text-3xl font-bold mb-4">Submission Successful!</h1>
+          <p className="text-muted-foreground mb-6">
+            Thank you for submitting <strong>{formData.name}</strong>. Your submission is now under review by our team.
+            We'll notify you at <strong>{formData.submitterEmail}</strong> once it's approved.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={() => {
+                setIsSubmitted(false);
+                setFormData({
+                  name: "",
+                  description: "",
+                  website: "",
+                  github: "",
+                  category: "",
+                  type: "",
+                  submitterName: "",
+                  submitterEmail: "",
+                  reasonForSubmission: ""
+                });
+                setTags([]);
+              }}
+            >
+              Submit Another Tool
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/tools">Browse Tools</a>
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Step 0: Initial tool submission form UI
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="pt-20 pb-12 container mx-auto px-4 max-w-2xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-4">Submit a Cybersecurity Tool</h1>
+          <p className="text-muted-foreground">
+            Help grow our community by submitting a cybersecurity tool for review. All submissions are manually reviewed before being added to the directory.
+          </p>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Tool Information</CardTitle>
+            <CardDescription>
+              Please provide detailed information about the cybersecurity tool you'd like to submit.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Form fields */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Tool Name *</Label>
+                  <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Nmap, Wireshark" required />
+                </div>
+                <div>
+                  <Label htmlFor="website">Website URL *</Label>
+                  <Input id="website" type="url" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} placeholder="https://example.com" required />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="description">Description *</Label>
+                <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Provide a clear, concise description of what this tool does..." rows={4} required />
+              </div>
+              <div>
+                <Label htmlFor="github">GitHub URL (optional)</Label>
+                <Input id="github" type="url" value={formData.github} onChange={(e) => setFormData({ ...formData, github: e.target.value })} placeholder="https://github.com/username/repo" />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Category *</Label>
+                  <Select onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                    <SelectContent>{categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Type *</Label>
+                  <Select onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                    <SelectTrigger><SelectValue placeholder="Select tool type" /></SelectTrigger>
+                    <SelectContent>{types.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="tags">Tags</Label>
+                <div className="flex space-x-2 mb-2">
+                  <Input id="tags" value={currentTag} onChange={(e) => setCurrentTag(e.target.value)} onKeyPress={handleKeyPress} placeholder="Add tags (press Enter to add)" />
+                  <Button type="button" onClick={addTag} variant="outline"><Plus className="h-4 w-4" /></Button>
+                </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map(tag => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="reason">Why should this tool be included?</Label>
+                <Textarea id="reason" value={formData.reasonForSubmission} onChange={(e) => setFormData({ ...formData, reasonForSubmission: e.target.value })} placeholder="Tell us why this tool would be valuable to the cybersecurity community..." rows={3} />
+              </div>
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-4">Submitter Information</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="submitterName">Your Name</Label>
+                    <Input id="submitterName" value={formData.submitterName} onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })} placeholder="Your full name" />
+                  </div>
+                  <div>
+                    <Label htmlFor="submitterEmail">Your Email *</Label>
+                    <Input id="submitterEmail" type="email" value={formData.submitterEmail} onChange={(e) => setFormData({ ...formData, submitterEmail: e.target.value })} placeholder="your.email@example.com" required />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Review Process:</strong> All submissions are manually reviewed by our team. We'll verify the tool's legitimacy, security, and value to the community before approval. You'll receive an email notification once your submission is reviewed.
+                </p>
+              </div>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit Tool for Review"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+      <Footer />
+    </div>
+  );
 };
 
-export const getToolById = async (id: string): Promise<Tool> => {
-  const { data, error } = await supabase
-    .from('tools')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error('Error fetching tool:', error);
-    throw error;
-  }
-
-  return data as Tool;
-};
-
-export const getRelatedTools = async (toolId: string): Promise<Tool[]> => {
-  // First get the current tool to find its related tools
-  const { data: currentTool, error: currentToolError } = await supabase
-    .from('tools')
-    .select('relatedTools')
-    .eq('id', toolId)
-    .single();
-
-  if (currentToolError) {
-    console.error('Error fetching current tool:', currentToolError);
-    throw currentToolError;
-  }
-
-  if (!currentTool?.relatedTools || currentTool.relatedTools.length === 0) {
-    return [];
-  }
-
-  // Then fetch the related tools
-  const { data, error } = await supabase
-    .from('tools')
-    .select('*')
-    .in('id', currentTool.relatedTools);
-
-  if (error) {
-    console.error('Error fetching related tools:', error);
-    throw error;
-  }
-
-  return data as Tool[];
-};
-
-export const toggleWishlist = async (userId: string, toolId: string, isWishlisted: boolean) => {
-  if (isWishlisted) {
-    const { error } = await supabase
-      .from('wishlist')
-      .delete()
-      .eq('user_id', userId)
-      .eq('tool_id', toolId);
-    return { error };
-  } else {
-    const { error } = await supabase
-      .from('wishlist')
-      .insert([{ user_id: userId, tool_id: toolId }]);
-    return { error };
-  }
-};
-
-export const fetchWishlistedTools = async (userId: string): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('wishlist')
-    .select('tool_id')
-    .eq('user_id', userId);
-
-  if (error) {
-    console.error('Error fetching wishlist:', error);
-    throw error;
-  }
-
-  return data.map(item => item.tool_id);
-};
-
-// Fetch user's voted tools
-export const fetchUserVotes = async (userId: string): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('tool_votes')
-    .select('tool_id')
-    .eq('user_id', userId);
-
-  if (error) {
-    console.error('Error fetching user votes:', error);
-    return [];
-  }
-
-  return data.map(vote => vote.tool_id);
-};
-
-export const toggleVote = async (
-  userId: string,
-  toolId: string,
-  comment?: string
-): Promise<{ error?: Error; voted?: boolean }> => {
-  try {
-    // Check if user already voted
-    const { data: existingVote, error: fetchError } = await supabase
-      .from('tool_votes')
-      .select()
-      .eq('user_id', userId)
-      .eq('tool_id', toolId)
-      .maybeSingle();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
-    }
-
-    if (existingVote) {
-      // Undo vote: delete the existing vote
-      const { error: deleteError } = await supabase
-        .from('tool_votes')
-        .delete()
-        .eq('user_id', userId)
-        .eq('tool_id', toolId);
-
-      if (deleteError) throw deleteError;
-
-      // Decrement the tool votes count with RPC
-      const { error: decError } = await supabase
-        .rpc('decrement_votes', { tool_id: toolId });
-
-      if (decError) throw decError;
-
-      return { error: undefined, voted: false };
-    } else {
-      // Cast a new vote
-      const { error: insertError } = await supabase
-        .from('tool_votes')
-        .insert([{
-          user_id: userId,
-          tool_id: toolId,
-          vote_type: 'upvote',
-          comment
-        }]);
-
-      if (insertError) throw insertError;
-
-      // Increment votes count with RPC
-      const { error: incError } = await supabase
-        .rpc('increment_votes', { tool_id: toolId });
-
-      if (incError) throw incError;
-
-      return { error: undefined, voted: true };
-    }
-  } catch (error) {
-    console.error('Toggle vote error:', error);
-    return {
-      error: error instanceof Error ? error : new Error('Toggle vote failed')
-    };
-  }
-};
-
-
-
+export default Submit;
