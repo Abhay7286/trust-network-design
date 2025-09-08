@@ -14,11 +14,10 @@ export interface Tool {
   github?: string;
   tags: string[];
   last_updated: string;
-  submitted_by: string;
+  submitted_by: string; // User ID of the creator
   votes: number;
   related_tools: string[];
   logo_url?: string;
-  created_by: string; // User ID of the creator
   featured: boolean; // Indicates if the tool is featured
   average_rating?: number; // Optional average rating
   total_reviews?: number; // Optional total reviews count
@@ -103,12 +102,12 @@ export const fetchTools = async (): Promise<Tool[]> => {
         votes,
         related_tools,
         logo_url,
-        created_by,
         featured,
         average_rating,
         total_reviews,
         created_at
       `)
+      .eq('status', 'approved') 
       .order('trust_score', { ascending: false });
 
     if (error) {

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, ExternalLink, Github, Heart, Star, Calendar, Flag, ArrowLeft, Share2, MessageCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
-import ResourcesSection from "@/components/ResourceSection";
+import ResourcesSection from "@/components/AddResource";
 
 const ToolDetail = () => {
   const { id } = useParams<{ id: string }>();
