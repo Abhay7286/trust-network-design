@@ -366,7 +366,7 @@ const ToolsList = ({ searchQuery, selectedCategory, selectedType, sortBy, viewMo
   const ToolListItem = ({ tool }: { tool: Tool }) => (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="flex items-center space-x-3">
               <div>
