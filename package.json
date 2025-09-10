@@ -73,8 +73,6 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "vaul": "^0.9.3",
-    "vite-react-ssg": "^0.8.9",
-    "vite-ssg": "^28.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

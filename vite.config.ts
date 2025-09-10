@@ -2,7 +2,13 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
+// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  /**
+   * This pre-bundles dependencies to optimize Vite startup.
+   * When the server restarts, dependencies like React are already cached,
+   * so reloads are much faster.
+   */
   optimizeDeps: {
     include: [
       "@hookform/resolvers", "@radix-ui/react-accordion", "@radix-ui/react-alert-dialog",
@@ -21,24 +27,21 @@ export default defineConfig(({ mode }) => ({
       "recharts", "sonner", "tailwind-merge", "tailwindcss-animate", "vaul", "zod"
     ]
   },
+
   server: {
-    host: "::",
-    port: 8080,
+    host: "::", // Enables IPv6 and external access
+    port: 8080
   },
+
   plugins: [
     react(),
-    // No ssgPlugin() here, handled by vite-react-ssg via your React entrypoint setup
-  ],
+  ].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    outDir: 'dist',
-    rollupOptions: {
-      input: path.resolve(__dirname, 'src/main.tsx'), // Normal Vite entry, no ssg-entry query param
-    },
-  },
+
   appType: 'mpa',
 }));
