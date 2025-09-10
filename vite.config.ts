@@ -1,15 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
+import { ssgPlugin } from "@wroud/vite-plugin-ssg";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  /**
-   * This pre-bundles dependencies to optimize Vite startup.
-   * When the server restarts, dependencies like React are already cached,
-   * so reloads are much faster.
-   */
   optimizeDeps: {
     include: [
       "@hookform/resolvers", "@radix-ui/react-accordion", "@radix-ui/react-alert-dialog",
@@ -30,18 +24,29 @@ export default defineConfig(({ mode }) => ({
   },
 
   server: {
-    host: "::", // Enables IPv6 and external access
+    host: "::", 
     port: 8080
   },
 
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
-  ].filter(Boolean),
+    ssgPlugin(),
+  ],
 
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+
+  build: {
+    outDir: 'dist', 
+    rollupOptions: {
+      input: {
+        index: path.resolve(__dirname, 'src/main.tsx') + '?ssg-entry',
+      },
+    },
+  },
+
+  appType: 'mpa',
 }));

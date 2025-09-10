@@ -56,29 +56,26 @@ const Navigation = () => {
           <nav className="hidden md:flex items-center space-x-6">
             <a
               href="/"
-              className={`text-sm font-medium hover:text-primary transition-colors ${
-                location.pathname === "/" ? "text-black" : "text-muted-foreground"
-              }`}
+              className={`text-sm font-medium hover:text-primary transition-colors ${location.pathname === "/" ? "text-black" : "text-muted-foreground"
+                }`}
             >
               Home
             </a>
             <a
               href="/osint"
-              className={`text-sm font-medium hover:text-primary transition-colors ${
-                location.pathname === "/osint"
+              className={`text-sm font-medium hover:text-primary transition-colors ${location.pathname === "/osint"
                   ? "text-black"
                   : "text-muted-foreground"
-              }`}
+                }`}
             >
               OSINT
             </a>
             <a
               href="/google-dork"
-              className={`text-sm font-medium hover:text-primary transition-colors ${
-                location.pathname === "/google-dork"
+              className={`text-sm font-medium hover:text-primary transition-colors ${location.pathname === "/google-dork"
                   ? "text-black"
                   : "text-muted-foreground"
-              }`}
+                }`}
             >
               Google Dork
             </a>
@@ -149,33 +146,30 @@ const Navigation = () => {
             <div className="container px-4 py-4 space-y-4">
               <a
                 href="/"
-                className={`block text-base font-medium hover:text-primary transition-colors ${
-                  location.pathname === "/"
+                className={`block text-base font-medium hover:text-primary transition-colors ${location.pathname === "/"
                     ? "text-black"
                     : "text-muted-foreground"
-                }`}
+                  }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </a>
               <a
                 href="/osint"
-                className={`block text-base font-medium hover:text-primary transition-colors ${
-                  location.pathname === "/osint"
+                className={`block text-base font-medium hover:text-primary transition-colors ${location.pathname === "/osint"
                     ? "text-black"
                     : "text-muted-foreground"
-                }`}
+                  }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 OSINT
               </a>
               <a
                 href="/google-dork"
-                className={`block text-base font-medium hover:text-primary transition-colors ${
-                  location.pathname === "/google-dork"
+                className={`block text-base font-medium hover:text-primary transition-colors ${location.pathname === "/google-dork"
                     ? "text-black"
                     : "text-muted-foreground"
-                }`}
+                  }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Google Dork
