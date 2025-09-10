@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { ssgPlugin } from "@wroud/vite-plugin-ssg";
 
 export default defineConfig(({ mode }) => ({
   optimizeDeps: {
@@ -22,31 +21,24 @@ export default defineConfig(({ mode }) => ({
       "recharts", "sonner", "tailwind-merge", "tailwindcss-animate", "vaul", "zod"
     ]
   },
-
   server: {
-    host: "::", 
-    port: 8080
+    host: "::",
+    port: 8080,
   },
-
   plugins: [
     react(),
-    ssgPlugin(),
+    // No ssgPlugin() here, handled by vite-react-ssg via your React entrypoint setup
   ],
-
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-
   build: {
-    outDir: 'dist', 
+    outDir: 'dist',
     rollupOptions: {
-      input: {
-        index: path.resolve(__dirname, 'src/main.tsx') + '?ssg-entry',
-      },
+      input: path.resolve(__dirname, 'src/main.tsx'), // Normal Vite entry, no ssg-entry query param
     },
   },
-
   appType: 'mpa',
 }));
