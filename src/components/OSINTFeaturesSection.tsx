@@ -143,10 +143,10 @@ const OSINTFeaturesSection = () => {
               <Target className="text-gray-400" size={32} />
             </div>
             <h3 className="text-2xl font-bold mb-4 flex items-center justify-center space-x-3">
-              <span>Join Our OSINT Community on WhatsApp</span>
+              <span>Join Our Community on WhatsApp</span>
             </h3>
             <p className="text-gray-300 mb-8 text-center max-w-xl mx-auto">
-              Connect with professionals, share techniques, and stay updated on the latest OSINT methodologies.
+              Connect with professionals, share techniques, and stay updated on the latest Cyber methodologies.
             </p>
             <div className="flex justify-center">
               <Button className="bg-gradient-to-r from-white to-gray-300 text-black px-8 py-3 text-lg font-semibold rounded-lg shadow-md hover:from-gray-300 hover:to-white transition-colors duration-300">
