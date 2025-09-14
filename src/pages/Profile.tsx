@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import ToolCard from "@/components/ToolCard";
+// import ToolCard from "@/components/ToolCard";
 import { v4 as uuidv4 } from 'uuid';
 import {
   User,
@@ -25,11 +25,17 @@ import {
   LinkedinIcon,
   ArrowLeft,
 } from "lucide-react";
-import { fetchVotingHistory, VoteHistory, type Tool } from "@/data/tools";
+import { VoteHistory, type Tool } from "@/data/tools";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import ErrorBoundary from "@/components/ErrorBoundary";
+// import ErrorBoundary from "@/components/ErrorBoundary";
 import CoinsIcon from '../../src/coinsicon.svg';
+import Loader from "../components/Loader";
+import { Helmet } from "react-helmet-async";
+const WishlistTab = lazy(() => import("../components/WishlistTab"));
+const UserToolsTab = lazy(() => import("../components/UserToolsTab"));
+const StatsTab = lazy(() => import("../components/StatsTab"));
+const VotesTab = lazy(() => import("../components/VotesTab"));
 
 const Profile = () => {
   // State management
@@ -142,7 +148,6 @@ const Profile = () => {
       });
     }
   };
-
 
   // Fetch user tools submitted
   const fetchUserTools = async () => {
@@ -350,477 +355,336 @@ const Profile = () => {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-32 bg-muted rounded-lg"></div>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="h-64 bg-muted rounded-lg"></div>
-              <div className="h-64 bg-muted rounded-lg"></div>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader />
       </div>
     );
   }
 
   // Main render
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Profile Header Card */}
-        <button
-          className="flex items-center px-4 py-2 rounded-lg border text-base font-medium bg-white text-black hover:bg-gray-100"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Home
-        </button>
-        <Card>
-          <CardHeader>
-            <div className="grid items-center justify-between sm:grid-none sm:flex">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage
-                    src={avatarPreview || profile.avatarUrl || "/placeholder-avatar.jpg"}
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
-                  <AvatarFallback className="text-lg">
-                    {profile.fullName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h1 className="text-2xl font-bold">{profile.fullName}</h1>
-                  {/* CyberCoins display */}
-                  <div className="flex items-center space-x-2 mt-2">
-                    <img src={CoinsIcon} alt="Coins Icon" className="h-5 w-5 text-yellow-400" />
-                    <span className="font-semibold text-lg">{profile.cyberPoints} CyberCoin</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary">Premium Member</Badge>
-                    <Badge variant="outline">Verified</Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-4 mt-4">
-                {/* Social Media Icons with links */}
-                {profile.linkedin && (
-                  <a
-                    href={`https://linkedin.com/in/${profile.linkedin}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="LinkedIn"
-                    className="hover:text-blue-600"
-                  >
-                    <LinkedinIcon className="h-6 w-6" />
-                  </a>
-                )}
-                {profile.github && (
-                  <a
-                    href={`https://github.com/${profile.github}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="GitHub"
-                    className="hover:text-gray-700"
-                  >
-                    <Github className="h-6 w-6" />
-                  </a>
-                )}
-                {profile.instagram && (
-                  <a
-                    href={`https://instagram.com/${profile.instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Instagram"
-                    className="hover:text-pink-600"
-                  >
-                    {/* Instagram svg or icon */}
-                    <svg
-                      className="h-6 w-6 fill-current"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 2A3.75 3.75 0 004 7.75v8.5A3.75 3.75 0 007.75 20h8.5a3.75 3.75 0 003.75-3.75v-8.5A3.75 3.75 0 0016.25 4h-8.5zm4.25 2.75a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm0 2a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm4.75-.25a.75.75 0 110 1.5.75.75 0 010-1.5z" />
-                    </svg>
-                  </a>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2"
-                  style={{ transform: 'translateY(-6px)' }}
-                >
-                  <LogOut className="h-4 w-4" /> Sign Out
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Main Content Grid */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Left Column - Profile Info */}
+    <>
+      <Helmet>
+        <title>{profile.fullName || "User"} - CyberDirectory Profile</title>
+        <meta
+          name="description"
+          content={profile.bio || `Profile page for ${profile.fullName || "user"} on CyberDirectory.`}
+        />
+        <meta property="og:title" content={`${profile.fullName || "User"} - CyberDirectory Profile`} />
+        <meta
+          property="og:description"
+          content={profile.bio || `Discover the profile of ${profile.fullName || "user"} on CyberDirectory.`}
+        />
+        <meta property="og:image" content={profile.avatarUrl || "/default-avatar.png"} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <button
+            className="flex items-center px-4 py-2 rounded-lg border text-base font-medium bg-white text-black hover:bg-gray-100"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Home
+          </button>
+          {/* Profile Header Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" /> Profile Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isEditing && (
-                <div className="space-y-2">
-                  <Label htmlFor="avatar">Profile Picture</Label>
-                  <Input
-                    id="avatar"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="cursor-pointer"
-                  />
+              <div className="grid items-center justify-between sm:grid-none sm:flex">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage
+                      src={avatarPreview || profile.avatarUrl || "/placeholder-avatar.jpg"}
+                      className="h-20 w-20 rounded-lg object-cover" rel="preload"
+                    />
+                    <AvatarFallback className="text-lg">
+                      {profile.fullName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h1 className="text-2xl font-bold">{profile.fullName}</h1>
+                    {/* CyberCoins display */}
+                    <div className="flex items-center space-x-2 mt-2">
+                      <img src={CoinsIcon} alt="Coins Icon" className="h-5 w-5 text-yellow-400" />
+                      <span className="font-semibold text-lg">{profile.cyberPoints} CyberCoin</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary">Premium Member</Badge>
+                      <Badge variant="outline">Verified</Badge>
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  value={profile.fullName}
-                  onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profile.bio}
-                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  disabled={!isEditing}
-                  placeholder="Tell us about yourself..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="organization">Organization</Label>
-                <Input
-                  id="organization"
-                  value={profile.organization}
-                  onChange={(e) => setProfile({ ...profile, organization: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
 
-              {/* Social Media Links Inputs */}
-              <div className="space-y-2">
-                <Label htmlFor="linkedin">LinkedIn</Label>
-                <Input
-                  id="linkedin"
-                  type="text"
-                  placeholder="e.g. johnsmith"
-                  value={profile.linkedin}
-                  onChange={onLinkedInChange}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="github">GitHub</Label>
-                <Input
-                  id="github"
-                  type="text"
-                  placeholder="e.g. johnsmith"
-                  value={profile.github}
-                  onChange={onGithubChange}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input
-                  id="instagram"
-                  type="text"
-                  placeholder="e.g. yourhandle"
-                  value={profile.instagram}
-                  onChange={onInstagramChange}
-                  disabled={!isEditing}
-                />
-              </div>
-
-              {isEditing ? (
-                <div className="flex gap-2">
-                  <Button onClick={handleSave}>Save Changes</Button>
+                <div className="flex space-x-4 mt-4">
+                  {/* Social Media Icons with links */}
+                  {profile.linkedin && (
+                    <a
+                      href={`https://linkedin.com/in/${profile.linkedin}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="LinkedIn"
+                      className="hover:text-blue-600"
+                    >
+                      <LinkedinIcon className="h-6 w-6" />
+                    </a>
+                  )}
+                  {profile.github && (
+                    <a
+                      href={`https://github.com/${profile.github}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="GitHub"
+                      className="hover:text-gray-700"
+                    >
+                      <Github className="h-6 w-6" />
+                    </a>
+                  )}
+                  {profile.instagram && (
+                    <a
+                      href={`https://instagram.com/${profile.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Instagram"
+                      className="hover:text-pink-600"
+                    >
+                      {/* Instagram svg or icon */}
+                      <svg
+                        className="h-6 w-6 fill-current"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 2A3.75 3.75 0 004 7.75v8.5A3.75 3.75 0 007.75 20h8.5a3.75 3.75 0 003.75-3.75v-8.5A3.75 3.75 0 0016.25 4h-8.5zm4.25 2.75a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm0 2a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm4.75-.25a.75.75 0 110 1.5.75.75 0 010-1.5z" />
+                      </svg>
+                    </a>
+                  )}
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setAvatarPreview("");
-                      setAvatarFile(null);
-                    }}
+                    onClick={handleLogout}
+                    className="flex items-center gap-2"
+                    style={{ transform: 'translateY(-6px)' }}
                   >
-                    Cancel
+                    <LogOut className="h-4 w-4" /> Sign Out
                   </Button>
                 </div>
-              ) : (
-                <Button onClick={() => setIsEditing(true)}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              )}
-            </CardContent>
+              </div>
+            </CardHeader>
           </Card>
 
-          {/* Right Column - Tabs */}
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
-              <TabsTrigger value="profile" className="text-xs sm:text-sm p-2">
-                Profile
-              </TabsTrigger>
-              <TabsTrigger value="wishlist" className="text-xs sm:text-sm p-3">
-                <span className="hidden sm:inline">Wishlist ({wishlistTools.length})</span>
-                <span className="sm:hidden">List ({wishlistTools.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="tools" className="text-xs sm:text-sm p-3">
-                <span className="hidden sm:inline">My Tools ({userTools.length})</span>
-                <span className="sm:hidden">Tools ({userTools.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="text-xs sm:text-sm p-2">
-                Stats
-              </TabsTrigger>
-              <TabsTrigger value="votes" className="text-xs sm:text-sm p-2">
-                Votes
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Profile Tab */}
-            <TabsContent value="profile" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" /> About
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    {profile.bio || "No bio provided"}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" /> Account Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Member Since</span>
-                    <span className="text-sm text-muted-foreground">
-                      {profile.joinDate
-                        ? new Date(profile.joinDate).toLocaleDateString()
-                        : "N/A"}
-                    </span>
+          {/* Main Content Grid */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Left Column - Profile Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" /> Profile Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isEditing && (
+                  <div className="space-y-2">
+                    <Label htmlFor="avatar">Profile Picture</Label>
+                    <Input
+                      id="avatar"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="cursor-pointer"
+                    />
                   </div>
-
-                  <Separator />
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Email</span>
-                    <span className="text-sm text-muted-foreground">{profile.email}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Wishlist Tab */}
-            <TabsContent value="wishlist" className="space-y-6">
-              {wishlistTools.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No tools in wishlist</h3>
-                    <p className="text-muted-foreground">
-                      Start adding tools to your wishlist to keep track of your
-                      favorites.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="flex-wrap">
-                  {wishlistTools.map((tool) => (
-                    <ErrorBoundary
-                      key={tool.id}
-                      fallback={
-                        <div className="border p-4 rounded-lg">
-                          Failed to load tool
-                        </div>
-                      }
-                    >
-                      <ToolCard
-                        tool={tool}
-                        isWishlisted={true}
-                        onWishlistChange={fetchWishlistTools}
-                      />
-                    </ErrorBoundary>
-                  ))}
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    value={profile.fullName}
+                    onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                    disabled={!isEditing}
+                  />
                 </div>
-              )}
-            </TabsContent>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    value={profile.email}
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={profile.bio}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    disabled={!isEditing}
+                    placeholder="Tell us about yourself..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="organization">Organization</Label>
+                  <Input
+                    id="organization"
+                    value={profile.organization}
+                    onChange={(e) => setProfile({ ...profile, organization: e.target.value })}
+                    disabled={!isEditing}
+                  />
+                </div>
 
-            {/* My Tools Tab */}
-            <TabsContent value="tools" className="space-y-6">
-              {userTools.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Plus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No tools submitted</h3>
-                    <p className="text-muted-foreground">
-                      Share your favorite cybersecurity tools with the community.
-                    </p>
+                {/* Social Media Links Inputs */}
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin">LinkedIn</Label>
+                  <Input
+                    id="linkedin"
+                    type="text"
+                    placeholder="e.g. johnsmith"
+                    value={profile.linkedin}
+                    onChange={onLinkedInChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="github">GitHub</Label>
+                  <Input
+                    id="github"
+                    type="text"
+                    placeholder="e.g. johnsmith"
+                    value={profile.github}
+                    onChange={onGithubChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    type="text"
+                    placeholder="e.g. yourhandle"
+                    value={profile.instagram}
+                    onChange={onInstagramChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                {isEditing ? (
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave}>Save Changes</Button>
                     <Button
-                      className="mt-4"
-                      onClick={() => navigate("/submit-tool")}
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setAvatarPreview("");
+                        setAvatarFile(null);
+                      }}
                     >
-                      Submit Your First Tool
+                      Cancel
                     </Button>
+                  </div>
+                ) : (
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Right Column - Tabs */}
+            <Tabs defaultValue="profile" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
+                <TabsTrigger value="profile" className="text-xs sm:text-sm p-2">
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger value="wishlist" className="text-xs sm:text-sm p-3">
+                  <span className="hidden sm:inline">Wishlist ({wishlistTools.length})</span>
+                  <span className="sm:hidden">List ({wishlistTools.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="tools" className="text-xs sm:text-sm p-3">
+                  <span className="hidden sm:inline">My Tools ({userTools.length})</span>
+                  <span className="sm:hidden">Tools ({userTools.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="stats" className="text-xs sm:text-sm p-2">
+                  Stats
+                </TabsTrigger>
+                <TabsTrigger value="votes" className="text-xs sm:text-sm p-2">
+                  Votes
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Profile Tab */}
+              <TabsContent value="profile" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" /> About
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      {profile.bio || "No bio provided"}
+                    </p>
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="flex-wrap">
-                  {userTools.map((tool) => (
-                    <ToolCard key={tool.id} tool={tool} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Statistics Tab */}
-            <TabsContent value="stats" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" /> Activity Statistics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Member Since</span>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" /> Account Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Member Since</span>
+                      <span className="text-sm text-muted-foreground">
                         {profile.joinDate
                           ? new Date(profile.joinDate).toLocaleDateString()
                           : "N/A"}
                       </span>
                     </div>
-                  </div>
 
-                  <Separator />
+                    <Separator />
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Tools Submitted</span>
-                    <span className="text-sm font-bold">{userTools.length}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Wishlist Items</span>
-                    <span className="text-sm font-bold">{wishlistTools.length}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Total Votes Received</span>
-                    <span className="text-sm font-bold">
-                      {userTools.reduce((sum, tool) => sum + (tool.votes || 0), 0)}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Votes Tab */}
-            <TabsContent value="votes" className="space-y-6">
-              {votingHistory.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <ArrowUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No voting history</h3>
-                    <p className="text-muted-foreground">
-                      Your votes on tools will appear here.
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Email</span>
+                      <span className="text-sm text-muted-foreground">{profile.email}</span>
+                    </div>
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="space-y-4">
-                  {votingHistory.map((vote) => {
-                    const voteDate = new Date(vote.created_at);
-                    const isValidDate = !isNaN(voteDate.getTime());
-                    return (
-                      <Card key={`${vote.tool_id}-${vote.created_at}`}>
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium truncate">
-                                {vote.tool_name || "Unnamed Tool"}
-                              </h3>
-                              {(vote.tool_category || vote.tool_type) && (
-                                <div className="flex gap-2 mt-1 flex-wrap ">
-                                  {vote.tool_category && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="truncate max-w-[120px] text-[9px]"
-                                    >
-                                      {vote.tool_category}
-                                    </Badge>
-                                  )}
-                                  {vote.tool_type && (
-                                    <Badge
-                                      variant="outline"
-                                      className="truncate max-w-[120px] "
-                                    >
-                                      {vote.tool_type}
-                                    </Badge>
-                                  )}
-                                </div>
-                              )}
-                              {vote.comment && (
-                                <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">
-                                  "{vote.comment}"
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end shrink-0">
-                              <Badge
-                                variant={vote.vote_type === "upvote" ? "default" : "destructive"}
-                                className="mb-2"
-                              >
-                                {vote.vote_type === "upvote" ? "Upvoted" : "Downvoted"}
-                              </Badge>
-                              <div className="text-xs text-muted-foreground flex items-center">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {isValidDate ? voteDate.toLocaleDateString() : "Unknown date"}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+
+              {/* Wishlist Tab */}
+              <TabsContent value="wishlist" className="space-y-6">
+                <Suspense fallback={<Loader />}>
+                  <WishlistTab wishlistTools={wishlistTools} fetchWishlistTools={fetchWishlistTools} />
+                </Suspense>
+              </TabsContent>
+
+              {/* My Tools Tab */}
+              <TabsContent value="tools" className="space-y-6">
+                <Suspense fallback={<Loader />}>
+                  <UserToolsTab userTools={userTools} />
+                </Suspense>
+              </TabsContent>
+
+              {/* Statistics Tab */}
+              <TabsContent value="stats" className="space-y-6">
+                <Suspense fallback={<Loader />}>
+                  <StatsTab userTools={userTools} wishlistTools={wishlistTools} joinDate={profile.joinDate} />
+                </Suspense>
+              </TabsContent>
+
+              {/* Votes Tab */}
+              <TabsContent value="votes" className="space-y-6">
+                <Suspense fallback={<Loader />}>
+                  <VotesTab votingHistory={votingHistory} />
+                </Suspense>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
